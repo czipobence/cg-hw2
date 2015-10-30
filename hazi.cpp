@@ -62,7 +62,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Innentol modosithatod...
 
-const float EPSILON = 0.001
+const float EPSILON = 0.001;
 
 //--------------------------------------------------------
 // 3D Vektor
@@ -132,7 +132,26 @@ struct LightSpot {
 	Vector pos,vel;
 	Color c;
 	float lum;
-}
+};
+
+struct Object {
+	
+};
+
+struct Surface : public Object {
+	Vector p,n;
+};
+
+struct Paraboloid : public Object {
+	Vector p;
+	Surface sf;
+};
+
+struct Ellipsoid : public Object {
+	float ax_a, ax_b, ax_c;
+	
+	Ellipsoid() {ax_a = ax_b = ax_c = 1;}
+};
 
 const int screenWidth = 600;	// alkalmazĂĄs ablak felbontĂĄsa
 const int screenHeight = 600;
@@ -178,7 +197,7 @@ void onDisplay( ) {
 // Billentyuzet esemenyeket lekezelo fuggveny (lenyomas)
 void onKeyboard(unsigned char key, int x, int y) {
     if (key == ' ') {
-		long time = glutGet(GLUT_ELAPSED_TIME);
+		//long time = glutGet(GLUT_ELAPSED_TIME);
 		//CALCULATE_IMAGE
 		//calculateImage(time)
 		glutPostRedisplay( );
