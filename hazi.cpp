@@ -128,6 +128,12 @@ struct Color {
    }
 };
 
+struct LightSpot {
+	Vector pos,vel;
+	Color c;
+	float lum;
+}
+
 const int screenWidth = 600;	// alkalmazĂĄs ablak felbontĂĄsa
 const int screenHeight = 600;
 
