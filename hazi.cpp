@@ -170,6 +170,11 @@ struct Room {
 	LightSpot light; 
 };
 
+struct Ray {
+	Vector p0, dir;
+	Ray() : p0(Vector()), dir(Vector()) {}
+};
+
 struct Camera {
 	Vector pos,dir,up, right;
 	
