@@ -212,6 +212,7 @@ struct Camera {
 	
 	Ray getRay(int x, int y) {
 		Vector hitScreen = Screen::getPixelPos(x,y);
+		hitScreen = pos + dir + right * hitScreen.x + up * hitScreen.y;
 		return Ray(pos,hitScreen-pos);
 	}
 	
