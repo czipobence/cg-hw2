@@ -102,7 +102,6 @@ struct Vector {
    float Length() { return sqrt(x * x + y * y + z * z); }
    float Dist(Vector v) { return (*this - v).Length(); }
    Vector norm() {return *this * (1 / this->Length()); }
-   static Vector null() {return Vector (0,0);}
    
 };
  
@@ -172,19 +171,8 @@ struct Room {
 
 struct Ray {
 	Vector p0, dir;
-	Ray() : p0(Vector()), dir(Vector()) {}
-};
-
-struct Camera {
-	Vector pos,dir,up, right;
-	
-	Camera(Vector pos, Vector dir, Vector up) {
-		this -> pos = pos;
-		this -> dir = dir.norm();
-		this -> right = (dir % up).norm();
-		this -> up = (this-> right % this->dir).norm();
-	}
-	
+	Ray() : p0(Vector()), dir(Vector()) {};
+	Ray(Vector o, Vector d) : p0(o), dir(d.norm()) {}
 };
 
 struct Screen {
@@ -202,6 +190,29 @@ struct Screen {
 	
 	void draw() {
 		glDrawPixels(WIDTH, HEIGHT, GL_RGB, GL_FLOAT, image);
+	}
+	
+	Vector static getPixelPos(int x, int y) {
+		float posX = (x + 0.5) / (float) Screen::WIDTH/2 - 1;
+		float posY = (y + 0.5) / (float) Screen::HEIGHT/2 - 1; 
+		return Vector (posX,posY);		
+	}
+	
+};
+
+struct Camera {
+	Vector pos,dir,up, right;
+	
+	Camera(Vector pos, Vector dir, Vector up) {
+		this -> pos = pos;
+		this -> dir = dir.norm();
+		this -> right = (dir % up).norm();
+		this -> up = (this-> right % this->dir).norm();
+	}
+	
+	Ray getRay(int x, int y) {
+		Vector hitScreen = Screen::getPixelPos(x,y);
+		return Ray(pos,hitScreen-pos);
 	}
 	
 };
