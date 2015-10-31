@@ -170,21 +170,26 @@ struct Room {
 	LightSpot light; 
 };
 
-struct Screen {
-	const static int SCREEN_WIDTH = 600;
-	const static int SCREEN_HEIGHT = 600;
+struct Camera {
+	Vector pos,dir,up;
 	
-	Color image[SCREEN_WIDTH*SCREEN_HEIGHT];
+};
+
+struct Screen {
+	const static int WIDTH = 600;
+	const static int HEIGHT = 600;
+	
+	Color image[WIDTH*HEIGHT];
 
 	void render() {
-		glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-		for(int Y = 0; Y < SCREEN_HEIGHT; Y++)
-			for(int X = 0; X < SCREEN_WIDTH; X++)
-				image[Y*SCREEN_WIDTH + X] = Color((float)X/SCREEN_WIDTH, (float)Y/SCREEN_HEIGHT, 0);
+		glViewport(0, 0, WIDTH, HEIGHT);
+		for(int Y = 0; Y < HEIGHT; Y++)
+			for(int X = 0; X < WIDTH; X++)
+				image[Y*WIDTH + X] = Color((float)X/WIDTH, (float)Y/HEIGHT, 0);
 	}
 	
 	void draw() {
-		glDrawPixels(SCREEN_WIDTH, SCREEN_HEIGHT, GL_RGB, GL_FLOAT, image);
+		glDrawPixels(WIDTH, HEIGHT, GL_RGB, GL_FLOAT, image);
 	}
 	
 };
