@@ -146,10 +146,12 @@ const Material GLASS(Color(1.5,1.5,1.5),Color(0,0,0));
 
 
 struct Intersection {
-	bool valid;
+	bool real;
 	Vector v,n;
-	Intersection () : valid(false), v(Vector()), n(Vector()) {}
-	Intersection (Vector _v, Vector _n) : valid(true), v(_v), n(_n) {}
+	float t;
+	Intersection () : real(false), v(Vector()), n(Vector()), t(0) {}
+	//WE GO BACK IN TIME!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	Intersection (Vector _v, Vector _n, float time) : real(true), v(_v), n(_n), t(-1*time / C) {}
 };
 
 struct Ray {
@@ -165,6 +167,7 @@ struct Ray {
 struct Object {
 	Material m;
 	virtual Intersection intersect(const Ray& ray) = 0;
+	virtual ~Object () {}
 };
 
 struct Plain : public Object {
@@ -174,7 +177,7 @@ struct Plain : public Object {
 		float intersection_param = ((p - ray.p0) * n)/(ray.dir * n);
 		if (intersection_param < 0) return Intersection();
 		
-		return Intersection(ray.getVec(intersection_param),n);
+		return Intersection(ray.getVec(intersection_param),n,intersection_param);
 	}
 };
 
@@ -193,6 +196,19 @@ struct Room {
 	long objectNumber;
 	Object *objects;
 	LightSpot light; 
+	
+	Room() : objectNumber(0) {}
+	
+	Intersection getFirstInter(Ray r) {
+		Intersection closest, tmp;
+		closest.t = 0;
+		for (int i = 0; i< objectNumber; i++) {
+			Intersection inter = objects[i].intersect(r);
+			if (inter.real && inter.t < closest.t)
+				inter = closest;
+		}
+		return closest;
+	}
 };
 
 struct Screen {
