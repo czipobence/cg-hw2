@@ -147,9 +147,9 @@ const Material GLASS(Color(1.5,1.5,1.5),Color(0,0,0));
 
 struct Intersection {
 	bool valid;
-	Vector v;
-	Intersection () : valid(false), v(Vector()) {}
-	Intersection (Vector _v) : valid(true), v(_v) {}
+	Vector v,n;
+	Intersection () : valid(false), v(Vector()), n(Vector()) {}
+	Intersection (Vector _v, Vector _n) : valid(true), v(_v), n(_n) {}
 };
 
 struct Ray {
@@ -170,8 +170,11 @@ struct Object {
 struct Plain : public Object {
 	Vector p,n;
 	Intersection intersect(const Ray& ray) {
+		if (ray.dir * n < EPSILON) return Intersection();
 		float intersection_param = ((p - ray.p0) * n)/(ray.dir * n);
-		return Intersection(ray.getVec(intersection_param));
+		if (intersection_param < 0) return Intersection();
+		
+		return Intersection(ray.getVec(intersection_param),n);
 	}
 };
 
