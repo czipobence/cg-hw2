@@ -66,6 +66,7 @@ const float EPSILON = 0.001;
 const float C = 1.0;
 const int MAX_DEPTH = 3;
 const float T_MAX = 1000;
+int CALC_TIME = 0;
 
 //--------------------------------------------------------
 // 3D Vektor
@@ -130,7 +131,7 @@ struct Color {
    }
 };
 
-const Color AMBIENT_LIGHT(.1,.1,.1);
+const Color AMBIENT_LIGHT(.25,.25,.25);
 
 struct Light {
 	Vector pos,vel;
@@ -197,13 +198,15 @@ struct Material {
 	
 	Color shade(const Ray & ray, const Intersection& inter, Light* light) const {
 		Vector normal = inter.n;
-		Vector view = ray.dir * -1;
-		Vector lDir = (light->getPos(0) - inter.pos);
-		Color lumIn = light -> getLumAt(inter.pos,0);
+		Vector view = (ray.dir * -1).norm();
+		Vector lDir = (light->getPos(CALC_TIME) - inter.pos).norm();
+		Color lumIn = light -> getLumAt(inter.pos,CALC_TIME);
 		
 		Color lumOut = Color();
 		float cosTheta = normal * lDir;
-		if (cosTheta <= 0) return Color();
+		if (cosTheta <= 0) {
+			return Color();
+		}
 		lumOut = lumIn * kd * cosTheta;
 		
 		Vector half = (view + lDir).norm();
@@ -258,7 +261,7 @@ struct Ellipsoid : public Object {
 
 struct Room {
 	long objectNumber;
-	Object* objects[6];
+	Object* objects[20];
 	long lightNumber;
 	Light* lights[6]; 
 	
@@ -269,8 +272,10 @@ struct Room {
 		objects[3] = new Plain(new Material(Color(.5,0,0)),Vector(10,5,0),Vector(0,-1,0));
 		objects[4] = new Plain(new Material(Color(.5,0,0)),Vector(10,-5,0),Vector(0,1,0));
 		objects[5] = new Plain(&SIMPLE,Vector(0,0,0),Vector(1,0,0));
+		//objects[6] = new Plain(&SIMPLE,Vector(0.999,0,0),Vector(-1,0,0));
 		
-		lights[0] = new PointLight(Vector(5,4.8,0), Vector(), Color(.9,.3,.9), 20);
+		
+		lights[0] = new PointLight(Vector(2,4,0), Vector(), Color(.9,.3,.9), 100);
 	}
 	
 	Intersection getFirstInter(const Ray& r) {
@@ -288,9 +293,9 @@ struct Room {
 		if (depth  >= MAX_DEPTH) return AMBIENT_LIGHT;
 		Intersection hit = getFirstInter(ray);
 		Color outRadiance = AMBIENT_LIGHT * hit.material -> kd;
-		if (hit.t <= 0) return AMBIENT_LIGHT;
+		if (hit.t <= 0) return Color();
 		for (int i = 0; i< lightNumber; i++) {
-			Intersection lightHit = getFirstInter(Ray(hit.pos + hit.n.norm()*EPSILON, lights[i]->pos - hit.pos));
+			Intersection lightHit = getFirstInter(Ray(hit.pos + hit.n*EPSILON, lights[i]->getPos(CALC_TIME) - hit.pos));
 			if (lightHit.t <= 0 || lightHit.t > (lights[i]->pos - hit.pos).Length()) 
 				outRadiance = outRadiance + hit.material->shade(ray,hit,lights[i]);
 		}
@@ -326,7 +331,7 @@ struct Camera {
 	Vector pos,dir,up, right;
 	
 	Camera() {
-		*this = Camera(Vector(0.01,0,0), Vector(1,0,0), Vector(0,1,1));
+		*this = Camera(Vector(0.01,0,0), Vector(1,0,0), Vector(0,1,0));
 	}
 	
 	Camera(Vector pos, Vector dir, Vector up) {
