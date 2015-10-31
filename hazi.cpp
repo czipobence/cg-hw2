@@ -143,7 +143,7 @@ struct Surface : public Object {
 };
 
 struct Paraboloid : public Object {
-	Vector p;
+	Vector p;T
 	Surface sf;
 };
 
