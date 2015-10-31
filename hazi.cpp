@@ -171,7 +171,14 @@ struct Room {
 };
 
 struct Camera {
-	Vector pos,dir,up;
+	Vector pos,dir,up, right;
+	
+	Camera(Vector pos, Vector dir, Vector up) {
+		this -> pos = pos;
+		this -> dir = dir.norm();
+		this -> right = (dir % up).norm();
+		this -> up = (this-> right % this->dir).norm();
+	}
 	
 };
 
