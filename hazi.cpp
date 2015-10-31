@@ -44,7 +44,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <stdlib.h>
-
+#include <iostream>
 #if defined(__APPLE__)                                                                                                                                                                                                            
 #include <OpenGL/gl.h>                                                                                                                                                                                                            
 #include <OpenGL/glu.h>                                                                                                                                                                                                           
@@ -129,11 +129,15 @@ struct Color {
    }
 };
 
-const Color AMBIENT_LIGHT(.9,.1,.1);
+const Color AMBIENT_LIGHT(.1,.1,.1);
 
 struct Light {
 	Vector pos,vel;
 	Color color;
+
+	Light() : pos(Vector()), vel(Vector()) {}
+	Light (Vector _p, Vector _v) : pos(_p), vel(_v) {}
+
 };
 
 
@@ -145,7 +149,7 @@ struct Material {
 	Material() : n(Color(0,0,0)),kd(Color(0,0,0)), reflective(false), refractive(false) {}
 	
 	Color shade() {
-		return Color(0,0,0);
+		return Color(4,4,4);
 	}
 	
 };
@@ -176,12 +180,15 @@ struct Ray {
 
 struct Object {
 	Material *m;
-	virtual Intersection intersect(const Ray& ray) = 0;
+	virtual Intersection intersect(const Ray& ray) { return Intersection();}
 	virtual ~Object () {}
 };
 
 struct Plain : public Object {
 	Vector p,n;
+	
+	Plain(Vector _p, Vector _n) : p(_p), n(_n.norm()) {}
+	
 	Intersection intersect(const Ray& ray) {
 		if (ray.dir * n < EPSILON) return Intersection();
 		float intersection_param = ((p - ray.p0) * n)/(ray.dir * n);
@@ -208,7 +215,12 @@ struct Room {
 	long lightNumber;
 	Light *lights; 
 	
-	Room() : objectNumber(0), lightNumber(0) {}
+	Room() : objectNumber(1), lightNumber(1) {
+		objects = new Object[1];
+		objects = new Plain(Vector(3,0,0),Vector(-1,0,0));
+		lights = new Light[1];
+		lights = new Light(Vector(2,2,0), Vector());
+	}
 	
 	Intersection getFirstInter(Ray r) {
 		Intersection closest, tmp;
@@ -263,7 +275,7 @@ struct Camera {
 	Vector pos,dir,up, right;
 	
 	Camera() {
-		*this = Camera(Vector(),Vector(), Vector());
+		*this = Camera(Vector(0,0,0), Vector(1,0,0), Vector(0,1,0));
 	}
 	
 	Camera(Vector pos, Vector dir, Vector up) {
