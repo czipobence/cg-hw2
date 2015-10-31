@@ -63,6 +63,7 @@
 // Innentol modosithatod...
 
 const float EPSILON = 0.001;
+const float STEP_EPSILON = 0.1;
 const float C = 1.0;
 const int MAX_DEPTH = 3;
 const float T_MAX = 1000;
@@ -102,9 +103,9 @@ struct Vector {
 	return (*this - v).Length() < EPSILON;
    }
   
-   float Length() { return sqrt(x * x + y * y + z * z); }
-   float Dist(Vector v) { return (*this - v).Length(); }
-   Vector norm() {return *this * (1 / this->Length()); }
+   float Length() const { return sqrt(x * x + y * y + z * z); }
+   float Dist(Vector v) const { return (*this - v).Length(); }
+   Vector norm() const {return *this * (1 / this->Length()); }
    
 };
  
@@ -128,6 +129,9 @@ struct Color {
    }
    Color operator+(const Color& c) const {
  	return Color(r + c.r, g + c.g, b + c.b); 
+   }
+   Color operator-(const Color& c) const {
+ 	return Color(r - c.r, g - c.g, b - c.b); 
    }
 };
 
@@ -181,8 +185,13 @@ struct Material {
 	Color n, F0; 
 	bool reflective,refractive;
 	float shin;
-	Material(Color _kd, Color _ks, Color _n, Color _F, bool refl, bool refr, float _s) :
-	 kd(_kd), ks(_ks), n(_n), F0(_F), reflective(refl), refractive(refr), shin(_s) {}
+	Material(Color _kd, Color _ks, Color _n, Color _k, bool refl, bool refr, float _s) :
+	 kd(_kd), ks(_ks), n(_n), reflective(refl), refractive(refr), shin(_s) {
+		float fr = ((n.r -1) * (n.r -1)  + _k.r * _k.r) / ((n.r + 1) * (n.r + 1)  + _k.r * _k.r);
+		float fg = ((n.g -1) * (n.g -1)  + _k.g * _k.g) / ((n.g + 1) * (n.g + 1)  + _k.g * _k.g);
+		float fb = ((n.b -1) * (n.b -1)  + _k.b * _k.b) / ((n.b + 1) * (n.b + 1)  + _k.b * _k.b);
+		F0 = Color(fr,fg,fb); 
+	}
 	Material(Color c) {
 		*this = Material();
 		kd = c;
@@ -216,11 +225,24 @@ struct Material {
 		return lumOut + lumIn * ks * pow(cosDelta,shin);
 	}
 	
+	Vector reflect(const Vector & normal, const Vector & viewIn) const {
+		return viewIn  - normal * (normal * viewIn) * 2 ;
+	}
+	
+	Vector refract(const Vector & normal, const Vector & viewIn) const {
+		return viewIn;
+	}
+	
+	Color fresnel(const Vector & normal, const Vector & viewIn) const {
+		float cosalfa = fabs(normal * viewIn); 
+		return F0 + (Color(1,1,1) - F0 ) * pow(1 - cosalfa ,5);
+	}
+	
 };
 
 const Material GOLD(Color(), Color(), Color(0.17,0.35,1.5),Color(3.1,2.7,1.9),true,false,0);
 const Material GLASS(Color(), Color(), Color(1.5,1.5,1.5),Color(0,0,0),true,false,0);
-const Material SIMPLE(Color(0,0.5,0));
+const Material SIMPLE(Color(0,.5,0), Color(0,0,0), Color(),Color(),false,false,5);
 const Material SIMPLE2(Color(0,0,.5));
 
 
@@ -265,18 +287,9 @@ struct Room {
 	long lightNumber;
 	Light* lights[6]; 
 	
-	Room() : objectNumber(6), lightNumber(1) {
-		objects[0] = new Plain(&SIMPLE,Vector(10,0,0),Vector(-1,0,0));
-		objects[1] = new Plain(&SIMPLE2,Vector(10,0,-5),Vector(0,0,1));
-		objects[2] = new Plain(&SIMPLE2,Vector(10,0,5),Vector(0,0,-1));
-		objects[3] = new Plain(new Material(Color(.5,0,0)),Vector(10,5,0),Vector(0,-1,0));
-		objects[4] = new Plain(new Material(Color(.5,0,0)),Vector(10,-5,0),Vector(0,1,0));
-		objects[5] = new Plain(&SIMPLE,Vector(0,0,0),Vector(1,0,0));
-		//objects[6] = new Plain(&SIMPLE,Vector(0.999,0,0),Vector(-1,0,0));
-		
-		
-		lights[0] = new PointLight(Vector(2,4,0), Vector(), Color(.9,.3,.9), 100);
+	Room() : objectNumber(0), lightNumber(0) {
 	}
+	
 	
 	Intersection getFirstInter(const Ray& r) {
 		Intersection closest, tmp;
@@ -294,16 +307,24 @@ struct Room {
 		Intersection hit = getFirstInter(ray);
 		Color outRadiance = AMBIENT_LIGHT * hit.material -> kd;
 		if (hit.t <= 0) return Color();
+
+		Vector norm = hit.n;
+		Vector vIn = (ray.dir).norm();
+		
+		
 		for (int i = 0; i< lightNumber; i++) {
-			Intersection lightHit = getFirstInter(Ray(hit.pos + hit.n*EPSILON, lights[i]->getPos(CALC_TIME) - hit.pos));
+			Intersection lightHit = getFirstInter(Ray(hit.pos + hit.n*STEP_EPSILON, lights[i]->getPos(CALC_TIME) - hit.pos));
 			if (lightHit.t <= 0 || lightHit.t > (lights[i]->pos - hit.pos).Length()) 
 				outRadiance = outRadiance + hit.material->shade(ray,hit,lights[i]);
 		}
-		if (hit.material->reflective) {
 		
+		
+		if (hit.material->reflective) {
+			Color fres = hit.material -> fresnel(norm,vIn);
+			outRadiance = outRadiance + traceRay(Ray (hit.pos + hit.n*STEP_EPSILON, hit.material -> reflect(norm,vIn)), depth +1) * fres ; 
 		}
 		if (hit.material->refractive) {
-		
+			//outRadiance = outRadiance + traceRay(Ray (hit.pos + hit.n*STEP_EPSILON, hit.material -> refract(norm,vIn)), depth +1) ; 
 		}
 		return outRadiance;
 	}
@@ -353,6 +374,27 @@ struct World {
 	Camera cam;
 	Screen screen;
 	Room room;
+	
+	World() {
+		cam = Camera(Vector(0.01,0,0), Vector(1,0,0), Vector(0,1,0));
+		screen = Screen();
+		room = Room();
+		
+	
+		room.objectNumber = 6;
+		room.lightNumber = 1;
+	
+		room.objects[0] = new Plain(&SIMPLE,Vector(10,0,0),Vector(-1,0,0));
+		room.objects[1] = new Plain(&SIMPLE2,Vector(10,0,-5),Vector(0,0,1));
+		room.objects[2] = new Plain(&GOLD,Vector(10,0,5),Vector(0,0,-1));
+		room.objects[3] = new Plain(new Material(Color(1,1,1)),Vector(10,5,0),Vector(0,-1,0));
+		room.objects[4] = new Plain(new Material(Color(.5,0,0)),Vector(10,-5,0),Vector(0,1,0));
+		room.objects[5] = new Plain(&SIMPLE,Vector(0,0,0),Vector(1,0,0));
+		
+		
+		room.lights[0] = new PointLight(Vector(2,0,0), Vector(), Color(1,1,1), 50);	
+		
+	}
 	
 	void draw() {screen.draw();}
 	
