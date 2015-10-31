@@ -159,13 +159,14 @@ struct Ray {
 
 struct Object {
 	Material m;
-	virtual Intersection intersect(Ray ray) {
-		return Intersection();
-	}
+	virtual Intersection intersect(Ray ray) = 0;
 };
 
 struct Surface : public Object {
 	Vector p,n;
+	Intersection intersect(Ray ray) {
+		return Intersection();
+	}
 };
 
 struct Paraboloid : public Object {
@@ -181,7 +182,7 @@ struct Ellipsoid : public Object {
 
 struct Room {
 	long objectNumber;
-	Object objects[7];
+	Object *objects;
 	LightSpot light; 
 };
 
