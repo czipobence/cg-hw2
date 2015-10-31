@@ -64,6 +64,7 @@
 
 const float EPSILON = 0.001;
 const float C = 1.0;
+const int MAX_DEPTH = 3;
 
 //--------------------------------------------------------
 // 3D Vektor
@@ -128,30 +129,39 @@ struct Color {
    }
 };
 
-struct LightSpot {
+const Color AMBIENT_LIGHT(.9,.1,.1);
+
+struct Light {
 	Vector pos,vel;
-	Color c;
-	float lum;
+	Color color;
 };
+
+
 
 struct Material {
 	Color n, kd;
-	Material(Color nn, Color nkd) : n(nn), kd(nkd) {}
-	Material() : n(Color(0,0,0)),kd(Color(0,0,0)) {}
+	bool reflective,refractive;
+	Material(Color nn, Color nkd,bool refl, bool refr) : n(nn), kd(nkd), reflective(refl), refractive(refr) {}
+	Material() : n(Color(0,0,0)),kd(Color(0,0,0)), reflective(false), refractive(false) {}
+	
+	Color shade() {
+		return Color(0,0,0);
+	}
 	
 };
 
-const Material GOLD(Color(0.17,0.35,1.5),Color(3.1,2.7,1.9));
-const Material GLASS(Color(1.5,1.5,1.5),Color(0,0,0));
+const Material GOLD(Color(0.17,0.35,1.5),Color(3.1,2.7,1.9),true,false);
+const Material GLASS(Color(1.5,1.5,1.5),Color(0,0,0),true,false);
 
 
 struct Intersection {
 	bool real;
-	Vector v,n;
+	Vector pos,n;
 	float t;
-	Intersection () : real(false), v(Vector()), n(Vector()), t(0) {}
+	Material *material;
+	Intersection () : real(false), pos(Vector()), n(Vector()), t(0) {}
 	//WE GO BACK IN TIME!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	Intersection (Vector _v, Vector _n, float time) : real(true), v(_v), n(_n), t(-1*time / C) {}
+	Intersection (Vector _v, Vector _n, float time, Material *mat) : real(true), pos(_v), n(_n), t(-1*time / C), material(mat) {}
 };
 
 struct Ray {
@@ -165,7 +175,7 @@ struct Ray {
 
 
 struct Object {
-	Material m;
+	Material *m;
 	virtual Intersection intersect(const Ray& ray) = 0;
 	virtual ~Object () {}
 };
@@ -177,7 +187,7 @@ struct Plain : public Object {
 		float intersection_param = ((p - ray.p0) * n)/(ray.dir * n);
 		if (intersection_param < 0) return Intersection();
 		
-		return Intersection(ray.getVec(intersection_param),n,intersection_param);
+		return Intersection(ray.getVec(intersection_param),n,intersection_param,m);
 	}
 };
 
@@ -195,9 +205,10 @@ struct Ellipsoid : public Object {
 struct Room {
 	long objectNumber;
 	Object *objects;
-	LightSpot light; 
+	long lightNumber;
+	Light *lights; 
 	
-	Room() : objectNumber(0) {}
+	Room() : objectNumber(0), lightNumber(0) {}
 	
 	Intersection getFirstInter(Ray r) {
 		Intersection closest, tmp;
@@ -209,6 +220,25 @@ struct Room {
 		}
 		return closest;
 	}
+	
+	Color traceRay(Ray ray, int depth = 0) {
+		if (depth  >= MAX_DEPTH) return AMBIENT_LIGHT;
+		Intersection hit = getFirstInter(ray);
+		if (hit.t >= 0) return AMBIENT_LIGHT;
+		Color outRadiance(0,0,0); //OR AMBIENT_LIGHT
+		for (int i = 0; i< lightNumber; i++) {
+			Intersection lightHit = getFirstInter(Ray(hit.pos + hit.n.norm()*EPSILON, lights[i].pos - hit.pos));
+			if (lightHit.t >= 0 || lightHit.t < (lights[i].pos - hit.pos).Length()) 
+				outRadiance = outRadiance + hit.material->shade();
+		}
+		if (hit.material->reflective) {
+		
+		}
+		if (hit.material->refractive) {
+		
+		}
+		return outRadiance;
+	}
 };
 
 struct Screen {
@@ -216,13 +246,6 @@ struct Screen {
 	const static int HEIGHT = 600;
 	
 	Color image[WIDTH*HEIGHT];
-
-	void render() {
-		glViewport(0, 0, WIDTH, HEIGHT);
-		for(int Y = 0; Y < HEIGHT; Y++)
-			for(int X = 0; X < WIDTH; X++)
-				image[Y*WIDTH + X] = Color((float)X/WIDTH, (float)Y/HEIGHT, 0);
-	}
 	
 	void draw() {
 		glDrawPixels(WIDTH, HEIGHT, GL_RGB, GL_FLOAT, image);
@@ -239,6 +262,10 @@ struct Screen {
 struct Camera {
 	Vector pos,dir,up, right;
 	
+	Camera() {
+		*this = Camera(Vector(),Vector(), Vector());
+	}
+	
 	Camera(Vector pos, Vector dir, Vector up) {
 		this -> pos = pos;
 		this -> dir = dir.norm();
@@ -254,11 +281,27 @@ struct Camera {
 	
 };
 
-Screen screen;
+struct World {
+	Camera cam;
+	Screen screen;
+	Room room;
+	
+	void draw() {screen.draw();}
+	
+	void render() {
+		glViewport(0, 0, screen.WIDTH, screen.HEIGHT);
+		for(int Y = 0; Y < screen.HEIGHT; Y++)
+			for(int X = 0; X < screen.WIDTH; X++)
+				screen.image[Y*screen.WIDTH + X] = room.traceRay(cam.getRay(X,Y));
+	}
+};
+
+World world;
 
 // Inicializacio, a program futasanak kezdeten, az OpenGL kontextus letrehozasa utan hivodik meg (ld. main() fv.)
 void onInitialization( ) { 
-	screen.render();
+	
+	world.render();
 
 }
 
@@ -267,7 +310,7 @@ void onDisplay( ) {
     glClearColor(0.1f, 0.2f, 0.3f, 1.0f);		// torlesi szin beallitasa
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // kepernyo torles
 
-	screen.draw();
+	world.draw();
 
     glutSwapBuffers();     				// Buffercsere: rajzolas vege
 
