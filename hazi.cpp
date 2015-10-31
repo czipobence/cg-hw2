@@ -65,6 +65,7 @@
 const float EPSILON = 0.001;
 const float C = 1.0;
 const int MAX_DEPTH = 3;
+const float T_MAX = 1000;
 
 //--------------------------------------------------------
 // 3D Vektor
@@ -134,30 +135,19 @@ const Color AMBIENT_LIGHT(.1,.1,.1);
 struct Light {
 	Vector pos,vel;
 	Color color;
+	float power;
 
-	Light() : pos(Vector()), vel(Vector()) {}
-	Light (Vector _p, Vector _v) : pos(_p), vel(_v) {}
-
-};
-
-
-
-struct Material {
-	Color n, kd;
-	bool reflective,refractive;
-	Material(Color nn, Color nkd,bool refl, bool refr) : n(nn), kd(nkd), reflective(refl), refractive(refr) {}
-	Material() : n(Color(0,0,0)),kd(Color(0,0,0)), reflective(false), refractive(false) {}
-	
-	Color shade() const {
-		return n;
+	Light() : pos(Vector()), vel(Vector()),color(Color()),power(0) {}
+	Light (Vector _p, Vector _v, Color _c, float _pow) : pos(_p), vel(_v), color(_c), power(_pow) {}
+	virtual Vector getPos(float t) { return pos + vel*t;}
+	virtual Color getLumAt(Vector vpos, float t) {
+		Vector dV = getPos(t) - vpos;
+		return color *( 1.0 / dV.Length() / dV.Length() * power);
 	}
-	
+
 };
 
-const Material GOLD(Color(0.17,0.35,1.5),Color(3.1,2.7,1.9),true,false);
-const Material GLASS(Color(1.5,1.5,1.5),Color(0,0,0),true,false);
-const Material SIMPLE(Color(0.5,0.5,0.1),Color(0,0,0),false,false);
-const Material SIMPLE2(Color(.1,.5,.5), Color(0,0,0),true,false);
+struct Material;
 
 struct Intersection {
 	bool real;
@@ -165,8 +155,7 @@ struct Intersection {
 	float t;
 	const Material *material;
 	Intersection () : real(false), pos(Vector()), n(Vector()), t(0) {}
-	//WE GO BACK IN TIME!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	Intersection (Vector _v, Vector _n, float time, const Material *mat) : real(true), pos(_v), n(_n), t(-1*time / C), material(mat) {}
+	Intersection (Vector _v, Vector _n, float time, const Material *mat) : real(true), pos(_v), n(_n), t(time), material(mat) {}
 };
 
 struct Ray {
@@ -177,6 +166,30 @@ struct Ray {
 		return p0 + dir *t;
 	}
 };
+
+struct Material {
+	Color n, kd;
+	bool reflective,refractive;
+	Material(Color nn, Color nkd,bool refl, bool refr) : n(nn), kd(nkd), reflective(refl), refractive(refr) {}
+	Material(Color c) : n(c),kd(Color(0,0,0)), reflective(false), refractive(false) {}
+	Material() : n(Color(0,0,0)),kd(Color(0,0,0)), reflective(false), refractive(false) {}
+	
+	Color shade(const Ray & ray, const Intersection& inter, Light* light) const {
+		Vector normal = inter.n;
+		Vector view = ray.dir * -1;
+		Vector lDir = (light->getPos(0) - inter.pos);
+		Color luminanceIn = light -> getLumAt(inter.pos,0);
+		
+		return n;
+		//return n;
+	}
+	
+};
+
+const Material GOLD(Color(0.17,0.35,1.5),Color(3.1,2.7,1.9),true,false);
+const Material GLASS(Color(1.5,1.5,1.5),Color(0,0,0),true,false);
+const Material SIMPLE(Color(0,0.5,0),Color(0,0,0),false,false);
+const Material SIMPLE2(Color(0,0,.5), Color(0,0,0),true,false);
 
 
 struct Object {
@@ -220,15 +233,20 @@ struct Room {
 	long lightNumber;
 	Light* lights[6]; 
 	
-	Room() : objectNumber(2), lightNumber(1) {
-		objects[0] = new Plain(&SIMPLE,Vector(3,0,0),Vector(-1,0,0));
-		objects[1] = new Plain(&SIMPLE2,Vector(3,-2,-2),Vector(-1,-1,0));
-		lights[0] = new Light(Vector(2,2,0), Vector());
+	Room() : objectNumber(6), lightNumber(1) {
+		objects[0] = new Plain(&SIMPLE,Vector(10,0,0),Vector(-1,0,0));
+		objects[1] = new Plain(&SIMPLE2,Vector(10,0,-5),Vector(0,0,1));
+		objects[2] = new Plain(&SIMPLE2,Vector(10,0,5),Vector(0,0,-1));
+		objects[3] = new Plain(new Material(Color(.5,0,0)),Vector(10,5,0),Vector(0,-1,0));
+		objects[4] = new Plain(new Material(Color(.5,0,0)),Vector(10,-5,0),Vector(0,1,0));
+		objects[5] = new Plain(&SIMPLE,Vector(0,0,0),Vector(1,0,0));
+		
+		lights[0] = new Light(Vector(2,2,0), Vector(), Color(1,1,1), 1);
 	}
 	
-	Intersection getFirstInter(Ray r) {
+	Intersection getFirstInter(const Ray& r) {
 		Intersection closest, tmp;
-		closest.t = 0;
+		closest.t = T_MAX;
 		for (int i = 0; i< objectNumber; i++) {
 			Intersection inter = objects[i]->intersect(r);
 			if (inter.real && inter.t < closest.t)
@@ -237,15 +255,15 @@ struct Room {
 		return closest;
 	}
 	
-	Color traceRay(Ray ray, int depth = 0) {
+	Color traceRay(const Ray &ray, int depth = 0) {
 		if (depth  >= MAX_DEPTH) return AMBIENT_LIGHT;
 		Intersection hit = getFirstInter(ray);
-		if (hit.t >= 0) return AMBIENT_LIGHT;
+		if (hit.t <= 0) return AMBIENT_LIGHT;
 		Color outRadiance(0,0,0); //OR AMBIENT_LIGHT
 		for (int i = 0; i< lightNumber; i++) {
 			Intersection lightHit = getFirstInter(Ray(hit.pos + hit.n.norm()*EPSILON, lights[i]->pos - hit.pos));
-			if (lightHit.t >= 0 || lightHit.t < (lights[i]->pos - hit.pos).Length()) 
-				outRadiance = outRadiance + hit.material->shade();
+			if (lightHit.t <= 0 || lightHit.t > (lights[i]->pos - hit.pos).Length()) 
+				outRadiance = outRadiance + hit.material->shade(ray,hit,lights[i]);
 		}
 		if (hit.material->reflective) {
 		
@@ -268,8 +286,8 @@ struct Screen {
 	}
 	
 	Vector static getPixelPos(int x, int y) {
-		float posX = (x + 0.5) / (float) Screen::WIDTH/2 - 1;
-		float posY = (y + 0.5) / (float) Screen::HEIGHT/2 - 1; 
+		float posX = (x + 0.5) / ((float) Screen::WIDTH/2.0) - 1;
+		float posY = (y + 0.5) / ((float) Screen::HEIGHT/2.0) - 1; 
 		return Vector (posX,posY);		
 	}
 	
@@ -279,7 +297,7 @@ struct Camera {
 	Vector pos,dir,up, right;
 	
 	Camera() {
-		*this = Camera(Vector(0,0,0), Vector(1,0,0), Vector(0,1,0));
+		*this = Camera(Vector(0.01,0,0), Vector(1,0,0), Vector(0,1,0));
 	}
 	
 	Camera(Vector pos, Vector dir, Vector up) {
