@@ -119,13 +119,13 @@ struct Color {
    Color(float r0, float g0, float b0) { 
 	r = r0; g = g0; b = b0;
    }
-   Color operator*(float a) { 
+   Color operator*(float a) const { 
 	return Color(r * a, g * a, b * a); 
    }
-   Color operator*(const Color& c) { 
+   Color operator*(const Color& c) const { 
 	return Color(r * c.r, g * c.g, b * c.b); 
    }
-   Color operator+(const Color& c) {
+   Color operator+(const Color& c) const {
  	return Color(r + c.r, g + c.g, b + c.b); 
    }
 };
@@ -211,7 +211,6 @@ struct Material {
 		if (cosDelta < 0) return lumOut;
 		
 		return lumOut + lumIn * ks * pow(cosDelta,shin);
-		//return n;
 	}
 	
 };
@@ -271,7 +270,7 @@ struct Room {
 		objects[4] = new Plain(new Material(Color(.5,0,0)),Vector(10,-5,0),Vector(0,1,0));
 		objects[5] = new Plain(&SIMPLE,Vector(0,0,0),Vector(1,0,0));
 		
-		lights[0] = new PointLight(Vector(5,4.99,0), Vector(), Color(1,.9,.9), 20);
+		lights[0] = new PointLight(Vector(5,4.8,0), Vector(), Color(.9,.3,.9), 20);
 	}
 	
 	Intersection getFirstInter(const Ray& r) {
@@ -288,8 +287,8 @@ struct Room {
 	Color traceRay(const Ray &ray, int depth = 0) {
 		if (depth  >= MAX_DEPTH) return AMBIENT_LIGHT;
 		Intersection hit = getFirstInter(ray);
+		Color outRadiance = AMBIENT_LIGHT * hit.material -> kd;
 		if (hit.t <= 0) return AMBIENT_LIGHT;
-		Color outRadiance(0,0,0); //OR AMBIENT_LIGHT
 		for (int i = 0; i< lightNumber; i++) {
 			Intersection lightHit = getFirstInter(Ray(hit.pos + hit.n.norm()*EPSILON, lights[i]->pos - hit.pos));
 			if (lightHit.t <= 0 || lightHit.t > (lights[i]->pos - hit.pos).Length()) 
@@ -327,7 +326,7 @@ struct Camera {
 	Vector pos,dir,up, right;
 	
 	Camera() {
-		*this = Camera(Vector(0.01,0,0), Vector(1,0,0), Vector(0,1,0));
+		*this = Camera(Vector(0.01,0,0), Vector(1,0,0), Vector(0,1,1));
 	}
 	
 	Camera(Vector pos, Vector dir, Vector up) {
