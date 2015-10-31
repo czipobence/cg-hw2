@@ -63,6 +63,7 @@
 // Innentol modosithatod...
 
 const float EPSILON = 0.001;
+const float C = 1.0;
 
 //--------------------------------------------------------
 // 3D Vektor
@@ -136,8 +137,8 @@ struct LightSpot {
 
 struct Material {
 	Color n, kd;
-	
 	Material(Color nn, Color nkd) : n(nn), kd(nkd) {}
+	Material() : n(Color(0,0,0)),kd(Color(0,0,0)) {}
 	
 };
 
@@ -163,21 +164,36 @@ struct Ellipsoid : public Object {
 	Ellipsoid() {ax_a = ax_b = ax_c = 1;}
 };
 
-const int screenWidth = 600;	// alkalmazĂĄs ablak felbontĂĄsa
-const int screenHeight = 600;
+struct Room {
+	long objectNumber;
+	Object objects[7];
+	LightSpot light; 
+};
 
+struct Screen {
+	const static int SCREEN_WIDTH = 600;
+	const static int SCREEN_HEIGHT = 600;
+	
+	Color image[SCREEN_WIDTH*SCREEN_HEIGHT];
 
-Color image[screenWidth*screenHeight];	// egy alkalmazĂĄs ablaknyi kĂŠp
+	void render() {
+		glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+		for(int Y = 0; Y < SCREEN_HEIGHT; Y++)
+			for(int X = 0; X < SCREEN_WIDTH; X++)
+				image[Y*SCREEN_WIDTH + X] = Color((float)X/SCREEN_WIDTH, (float)Y/SCREEN_HEIGHT, 0);
+	}
+	
+	void draw() {
+		glDrawPixels(SCREEN_WIDTH, SCREEN_HEIGHT, GL_RGB, GL_FLOAT, image);
+	}
+	
+};
 
+Screen screen;
 
 // Inicializacio, a program futasanak kezdeten, az OpenGL kontextus letrehozasa utan hivodik meg (ld. main() fv.)
 void onInitialization( ) { 
-	glViewport(0, 0, screenWidth, screenHeight);
-
-    // Peldakent keszitunk egy kepet az operativ memoriaba
-    for(int Y = 0; Y < screenHeight; Y++)
-		for(int X = 0; X < screenWidth; X++)
-			image[Y*screenWidth + X] = Color((float)X/screenWidth, (float)Y/screenHeight, 0);
+	screen.render();
 
 }
 
@@ -186,19 +202,7 @@ void onDisplay( ) {
     glClearColor(0.1f, 0.2f, 0.3f, 1.0f);		// torlesi szin beallitasa
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // kepernyo torles
 
-    // ..
-
-    // Peldakent atmasoljuk a kepet a rasztertarba
-    glDrawPixels(screenWidth, screenHeight, GL_RGB, GL_FLOAT, image);
-    // Majd rajzolunk egy kek haromszoget
-	glColor3f(0, 0, 1);
-	glBegin(GL_TRIANGLES);
-		glVertex2f(-0.2f, -0.2f);
-		glVertex2f( 0.2f, -0.2f);
-		glVertex2f( 0.0f,  0.2f);
-	glEnd( );
-
-    // ...
+	screen.draw();
 
     glutSwapBuffers();     				// Buffercsere: rajzolas vege
 
