@@ -222,7 +222,7 @@ struct Room {
 	
 	Room() : objectNumber(2), lightNumber(1) {
 		objects[0] = new Plain(&SIMPLE,Vector(3,0,0),Vector(-1,0,0));
-		objects[1] = new Plain(&SIMPLE2,Vector(3,0,0),Vector(-1,-1,0));
+		objects[1] = new Plain(&SIMPLE2,Vector(3,-2,-2),Vector(-1,-1,0));
 		lights[0] = new Light(Vector(2,2,0), Vector());
 	}
 	
