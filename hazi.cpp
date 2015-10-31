@@ -148,24 +148,25 @@ struct Material {
 	Material(Color nn, Color nkd,bool refl, bool refr) : n(nn), kd(nkd), reflective(refl), refractive(refr) {}
 	Material() : n(Color(0,0,0)),kd(Color(0,0,0)), reflective(false), refractive(false) {}
 	
-	Color shade() {
-		return Color(4,4,4);
+	Color shade() const {
+		return n;
 	}
 	
 };
 
 const Material GOLD(Color(0.17,0.35,1.5),Color(3.1,2.7,1.9),true,false);
 const Material GLASS(Color(1.5,1.5,1.5),Color(0,0,0),true,false);
-
+const Material SIMPLE(Color(0.5,0.5,0.1),Color(0,0,0),false,false);
+const Material SIMPLE2(Color(.1,.5,.5), Color(0,0,0),true,false);
 
 struct Intersection {
 	bool real;
 	Vector pos,n;
 	float t;
-	Material *material;
+	const Material *material;
 	Intersection () : real(false), pos(Vector()), n(Vector()), t(0) {}
 	//WE GO BACK IN TIME!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	Intersection (Vector _v, Vector _n, float time, Material *mat) : real(true), pos(_v), n(_n), t(-1*time / C), material(mat) {}
+	Intersection (Vector _v, Vector _n, float time, const Material *mat) : real(true), pos(_v), n(_n), t(-1*time / C), material(mat) {}
 };
 
 struct Ray {
@@ -179,7 +180,12 @@ struct Ray {
 
 
 struct Object {
-	Material *m;
+	const Material *m;
+	
+	Object () : m(&SIMPLE) {}
+	
+	Object (const Material *mat) : m(mat) {}
+	
 	virtual Intersection intersect(const Ray& ray) { return Intersection();}
 	virtual ~Object () {}
 };
@@ -187,13 +193,12 @@ struct Object {
 struct Plain : public Object {
 	Vector p,n;
 	
-	Plain(Vector _p, Vector _n) : p(_p), n(_n.norm()) {}
+	Plain(const Material* m ,Vector _p, Vector _n) :Object(m), p(_p), n(_n.norm()) {}
 	
 	Intersection intersect(const Ray& ray) {
-		if (ray.dir * n < EPSILON) return Intersection();
+		if (fabs(ray.dir * n) < EPSILON) return Intersection();
 		float intersection_param = ((p - ray.p0) * n)/(ray.dir * n);
 		if (intersection_param < 0) return Intersection();
-		
 		return Intersection(ray.getVec(intersection_param),n,intersection_param,m);
 	}
 };
@@ -206,29 +211,28 @@ struct Paraboloid : public Object {
 struct Ellipsoid : public Object {
 	float ax_a, ax_b, ax_c;
 	
-	Ellipsoid() {ax_a = ax_b = ax_c = 1;}
+	Ellipsoid(): Object(&GLASS) {ax_a = ax_b = ax_c = 1;}
 };
 
 struct Room {
 	long objectNumber;
-	Object *objects;
+	Object* objects[6];
 	long lightNumber;
-	Light *lights; 
+	Light* lights[6]; 
 	
-	Room() : objectNumber(1), lightNumber(1) {
-		objects = new Object[1];
-		objects = new Plain(Vector(3,0,0),Vector(-1,0,0));
-		lights = new Light[1];
-		lights = new Light(Vector(2,2,0), Vector());
+	Room() : objectNumber(2), lightNumber(1) {
+		objects[0] = new Plain(&SIMPLE,Vector(3,0,0),Vector(-1,0,0));
+		objects[1] = new Plain(&SIMPLE2,Vector(3,0,0),Vector(-1,-1,0));
+		lights[0] = new Light(Vector(2,2,0), Vector());
 	}
 	
 	Intersection getFirstInter(Ray r) {
 		Intersection closest, tmp;
 		closest.t = 0;
 		for (int i = 0; i< objectNumber; i++) {
-			Intersection inter = objects[i].intersect(r);
+			Intersection inter = objects[i]->intersect(r);
 			if (inter.real && inter.t < closest.t)
-				inter = closest;
+				closest = inter;
 		}
 		return closest;
 	}
@@ -239,8 +243,8 @@ struct Room {
 		if (hit.t >= 0) return AMBIENT_LIGHT;
 		Color outRadiance(0,0,0); //OR AMBIENT_LIGHT
 		for (int i = 0; i< lightNumber; i++) {
-			Intersection lightHit = getFirstInter(Ray(hit.pos + hit.n.norm()*EPSILON, lights[i].pos - hit.pos));
-			if (lightHit.t >= 0 || lightHit.t < (lights[i].pos - hit.pos).Length()) 
+			Intersection lightHit = getFirstInter(Ray(hit.pos + hit.n.norm()*EPSILON, lights[i]->pos - hit.pos));
+			if (lightHit.t >= 0 || lightHit.t < (lights[i]->pos - hit.pos).Length()) 
 				outRadiance = outRadiance + hit.material->shade();
 		}
 		if (hit.material->reflective) {
