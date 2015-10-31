@@ -77,22 +77,22 @@ struct Vector {
    Vector(float x0, float y0, float z0 = 0) { 
 	x = x0; y = y0; z = z0;
    }
-   Vector operator*(float a) { 
+   Vector operator*(float a) const { 
 	return Vector(x * a, y * a, z * a); 
    }
-   Vector operator/(float a) {
+   Vector operator/(float a) const {
 	return (*this) * (1.0 / a);
    }
-   Vector operator+(const Vector& v) {
+   Vector operator+(const Vector& v) const {
  	return Vector(x + v.x, y + v.y, z + v.z); 
    }
-   Vector operator-(const Vector& v) {
+   Vector operator-(const Vector& v) const {
  	return Vector(x - v.x, y - v.y, z - v.z); 
    }
-   float operator*(const Vector& v) { 	// dot product
+   float operator*(const Vector& v) const { 	// dot product
 	return (x * v.x + y * v.y + z * v.z); 
    }
-   Vector operator%(const Vector& v) { 	// cross product
+   Vector operator%(const Vector& v) const { 	// cross product
 	return Vector(y*v.z-z*v.y, z*v.x - x*v.z, x*v.y - y*v.x);
    }
    bool operator==(const Vector& v) {
@@ -147,31 +147,37 @@ const Material GLASS(Color(1.5,1.5,1.5),Color(0,0,0));
 
 struct Intersection {
 	bool valid;
-	Intersection () : valid(false) {}
+	Vector v;
+	Intersection () : valid(false), v(Vector()) {}
+	Intersection (Vector _v) : valid(true), v(_v) {}
 };
 
 struct Ray {
 	Vector p0, dir;
 	Ray() : p0(Vector()), dir(Vector()) {};
 	Ray(Vector o, Vector d) : p0(o), dir(d.norm()) {}
+	Vector getVec(float t) const {
+		return p0 + dir *t;
+	}
 };
 
 
 struct Object {
 	Material m;
-	virtual Intersection intersect(Ray ray) = 0;
+	virtual Intersection intersect(const Ray& ray) = 0;
 };
 
-struct Surface : public Object {
+struct Plain : public Object {
 	Vector p,n;
-	Intersection intersect(Ray ray) {
-		return Intersection();
+	Intersection intersect(const Ray& ray) {
+		float intersection_param = ((p - ray.p0) * n)/(ray.dir * n);
+		return Intersection(ray.getVec(intersection_param));
 	}
 };
 
 struct Paraboloid : public Object {
 	Vector p;
-	Surface sf;
+	Plain sf;
 };
 
 struct Ellipsoid : public Object {
