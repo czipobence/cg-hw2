@@ -144,8 +144,24 @@ struct Material {
 const Material GOLD(Color(0.17,0.35,1.5),Color(3.1,2.7,1.9));
 const Material GLASS(Color(1.5,1.5,1.5),Color(0,0,0));
 
+
+struct Intersection {
+	bool valid;
+	Intersection () : valid(false) {}
+};
+
+struct Ray {
+	Vector p0, dir;
+	Ray() : p0(Vector()), dir(Vector()) {};
+	Ray(Vector o, Vector d) : p0(o), dir(d.norm()) {}
+};
+
+
 struct Object {
 	Material m;
+	virtual Intersection intersect(Ray ray) {
+		return Intersection();
+	}
 };
 
 struct Surface : public Object {
@@ -167,12 +183,6 @@ struct Room {
 	long objectNumber;
 	Object objects[7];
 	LightSpot light; 
-};
-
-struct Ray {
-	Vector p0, dir;
-	Ray() : p0(Vector()), dir(Vector()) {};
-	Ray(Vector o, Vector d) : p0(o), dir(d.norm()) {}
 };
 
 struct Screen {
