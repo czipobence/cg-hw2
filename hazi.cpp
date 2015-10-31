@@ -141,10 +141,18 @@ struct Light {
 	Light (Vector _p, Vector _v, Color _c, float _pow) : pos(_p), vel(_v), color(_c), power(_pow) {}
 	virtual Vector getPos(float t) { return pos + vel*t;}
 	virtual Color getLumAt(Vector vpos, float t) {
+		return AMBIENT_LIGHT;
+	}
+
+};
+
+struct PointLight: public Light {
+	PointLight (Vector _p, Vector _v, Color _c, float _pow) : Light(_p, _v, _c, _pow) {}
+	
+	Color getLumAt(Vector vpos, float t) {
 		Vector dV = getPos(t) - vpos;
 		return color *( 1.0 / dV.Length() / dV.Length() * power);
 	}
-
 };
 
 struct Material;
@@ -168,28 +176,50 @@ struct Ray {
 };
 
 struct Material {
-	Color n, kd;
+	Color kd ,ks;
+	Color n, F0; 
 	bool reflective,refractive;
-	Material(Color nn, Color nkd,bool refl, bool refr) : n(nn), kd(nkd), reflective(refl), refractive(refr) {}
-	Material(Color c) : n(c),kd(Color(0,0,0)), reflective(false), refractive(false) {}
-	Material() : n(Color(0,0,0)),kd(Color(0,0,0)), reflective(false), refractive(false) {}
+	float shin;
+	Material(Color _kd, Color _ks, Color _n, Color _F, bool refl, bool refr, float _s) :
+	 kd(_kd), ks(_ks), n(_n), F0(_F), reflective(refl), refractive(refr), shin(_s) {}
+	Material(Color c) {
+		*this = Material();
+		kd = c;
+	}
+	Material() {
+		kd = Color();
+		ks= Color();
+		n= Color();
+		F0 = Color();
+		reflective = refractive = false;
+		shin = 0;
+	}
 	
 	Color shade(const Ray & ray, const Intersection& inter, Light* light) const {
 		Vector normal = inter.n;
 		Vector view = ray.dir * -1;
 		Vector lDir = (light->getPos(0) - inter.pos);
-		Color luminanceIn = light -> getLumAt(inter.pos,0);
+		Color lumIn = light -> getLumAt(inter.pos,0);
 		
-		return n;
+		Color lumOut = Color();
+		float cosTheta = normal * lDir;
+		if (cosTheta <= 0) return Color();
+		lumOut = lumIn * kd * cosTheta;
+		
+		Vector half = (view + lDir).norm();
+		float cosDelta = normal * half;
+		if (cosDelta < 0) return lumOut;
+		
+		return lumOut + lumIn * ks * pow(cosDelta,shin);
 		//return n;
 	}
 	
 };
 
-const Material GOLD(Color(0.17,0.35,1.5),Color(3.1,2.7,1.9),true,false);
-const Material GLASS(Color(1.5,1.5,1.5),Color(0,0,0),true,false);
-const Material SIMPLE(Color(0,0.5,0),Color(0,0,0),false,false);
-const Material SIMPLE2(Color(0,0,.5), Color(0,0,0),true,false);
+const Material GOLD(Color(), Color(), Color(0.17,0.35,1.5),Color(3.1,2.7,1.9),true,false,0);
+const Material GLASS(Color(), Color(), Color(1.5,1.5,1.5),Color(0,0,0),true,false,0);
+const Material SIMPLE(Color(0,0.5,0));
+const Material SIMPLE2(Color(0,0,.5));
 
 
 struct Object {
@@ -241,7 +271,7 @@ struct Room {
 		objects[4] = new Plain(new Material(Color(.5,0,0)),Vector(10,-5,0),Vector(0,1,0));
 		objects[5] = new Plain(&SIMPLE,Vector(0,0,0),Vector(1,0,0));
 		
-		lights[0] = new Light(Vector(2,2,0), Vector(), Color(1,1,1), 1);
+		lights[0] = new PointLight(Vector(5,4.99,0), Vector(), Color(1,.9,.9), 20);
 	}
 	
 	Intersection getFirstInter(const Ray& r) {
