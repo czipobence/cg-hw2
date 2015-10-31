@@ -134,6 +134,16 @@ struct LightSpot {
 	float lum;
 };
 
+struct Material {
+	Color n, kd;
+	
+	Material(Color nn, Color nkd) : n(nn), kd(nkd) {}
+	
+};
+
+const Material GOLD(Color(0.17,0.35,1.5),Color(3.1,2.7,1.9));
+const Material GLASS(Color(1.5,1.5,1.5),Color(0,0,0));
+
 struct Object {
 	
 };
@@ -143,7 +153,7 @@ struct Surface : public Object {
 };
 
 struct Paraboloid : public Object {
-	Vector p;T
+	Vector p;
 	Surface sf;
 };
 
