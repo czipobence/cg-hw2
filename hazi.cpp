@@ -138,7 +138,7 @@ struct Color {
    }
 };
 
-const Color AMBIENT_LIGHT(.35,.35,.35);
+const Color AMBIENT_LIGHT(.1,.1,.1);
 
 struct Light {
 	Vector pos,vel;
@@ -429,7 +429,7 @@ struct Room {
 		if (hit.material->refractive) {
 			Color fres = hit.material -> fresnel(norm,vIn);
 			//std::cout << (Color(1,1,1) - fres).r << " " << outRadiance.r << std::endl;
-			outRadiance = outRadiance + traceRay(Ray (hit.pos + hit.n*STEP_EPSILON, hit.material -> refract(norm,vIn)), depth +1) * (Color(1,1,1) - fres); 
+			outRadiance = outRadiance + traceRay(Ray (hit.pos - hit.n*STEP_EPSILON, hit.material -> refract(norm,vIn)), depth +1) * (Color(1,1,1) - fres); 
 		}
 		return outRadiance;
 	}
@@ -485,7 +485,8 @@ struct World {
 		screen = Screen();
 		room = Room();
 	
-		room.addObject( new Plain(&GLASS,Vector(10,0,0),Vector(-1,0,0)));
+		room.addObject( new Plain(&SIMPLE,Vector(10,0,0),Vector(-1,0,0)));
+		//room.addObject( new Plain(&GLASS,Vector(10.1,0,0),Vector(1,0,0)));
 		room.addObject( new Plain(&SIMPLE2,Vector(10,0,-5),Vector(0,0,1)));
 		//room.addObject( new Plain(&GOLD,Vector(10,0,5),Vector(0,0,-1)));
 		room.addObject( new Plain(new Material(Color(.9,.9,.9)),Vector(10,5,0),Vector(0,-1,0)));
@@ -529,7 +530,7 @@ struct World {
 		qs -> J = -5;*/
 		
 		room.addObject(qs);
-		//room.addObject(qs2);
+		room.addObject(qs2);
 		
 		room.addLight( new PointLight(Vector(8,3,-2), Vector(), Color(1,1,1), 40));	
 		
