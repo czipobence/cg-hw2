@@ -167,7 +167,7 @@ struct Intersection {
 	Vector pos,n;
 	float t;
 	const Material *material;
-	Intersection () : real(false), pos(Vector()), n(Vector()), t(0) {}
+	Intersection () : real(false), pos(Vector()), n(Vector()), t(0), material(NULL) {}
 	Intersection (Vector _v, Vector _n, float time, const Material *mat) : real(true), pos(_v), n(_n), t(time), material(mat) {}
 };
 
@@ -302,15 +302,17 @@ struct QuadraticShape : public Object {
 			if (fabs(Av) < EPSILON) {
 				if (fabs(Bv) < EPSILON) return Intersection();
 				param = -Cv / Bv;
+				if (param < 0) {
+					return Intersection();
+				}
 			} else {
 				float t0 = (Dv - Bv) / 2 / Av;
 				float t1 = (-1 * Dv - Bv) /2 /Av;
 			
-				param = t0 > t1 ? t1 : t0;
+				if (t0 <0 && t1 < 0) return Intersection();
+				if (t0 > 0 && t1 > 0) param = t0 > t1 ? t1 : t0;
+				else param = t0 > t1 ? t0 : t1;
 			}
-			
-			
-			
 			
 			Vector inter = ray.getVec(param);
 			
@@ -318,13 +320,14 @@ struct QuadraticShape : public Object {
 			float ny = 2 * B * inter.y + D * inter.x + F * inter.z + H;
 			float nz = 2 * C * inter.z + E * inter.x + F * inter.y + I;
 			
-			Vector n = Vector(-nx,ny,nz).norm();
+			Vector n = Vector(nx,ny,nz);
 			
-			//n = n % inter;
 			n = n.norm();
 			
 			
-			if (inter * ray.dir > 0) n = n*-1;
+			if (inter * ray.dir < 0) n = n*(-1);
+			
+			//n = Vector(0,0,-1);
 			
 			return Intersection(inter,n,param,m);
 			
@@ -367,6 +370,17 @@ struct Room {
 	Room() : objectNumber(0), lightNumber(0) {
 	}
 	
+	void addObject(Object *o) {
+		if (objectNumber == 20) return;
+		objects[objectNumber] = o;
+		objectNumber++;
+	}
+	
+	void addLight(Light *o) {
+		if (lightNumber == 6) return;
+		lights[lightNumber] = o;
+		lightNumber++;
+	}
 	
 	Intersection getFirstInter(const Ray& r) {
 		Intersection closest, tmp;
@@ -382,8 +396,11 @@ struct Room {
 	Color traceRay(const Ray &ray, int depth = 0) {
 		if (depth  >= MAX_DEPTH) return AMBIENT_LIGHT;
 		Intersection hit = getFirstInter(ray);
-		Color outRadiance = AMBIENT_LIGHT * hit.material -> kd;
+		
+		if (hit.material == NULL) return Color();
 		if (hit.t <= 0) return Color();
+		Color outRadiance = AMBIENT_LIGHT * hit.material -> kd;
+		
 
 		Vector norm = hit.n;
 		Vector vIn = (ray.dir).norm();
@@ -398,7 +415,17 @@ struct Room {
 		
 		if (hit.material->reflective) {
 			Color fres = hit.material -> fresnel(norm,vIn);
-			outRadiance = outRadiance + traceRay(Ray (hit.pos + hit.n*STEP_EPSILON, hit.material -> reflect(norm,vIn)), depth +1) * fres ; 
+			Vector vOut = hit.material -> reflect(norm,vIn);
+			
+			//std::cout << fres.r << " " << fres.g << " " << fres.b << std::endl;
+			
+			//std::cout << "VIN: " << vIn.x << ", " << vIn.y << ", " << vIn.z << std::endl;
+			//std::cout << "NROM: " << norm.x << ", " << norm.y << ", " << norm.z << std::endl;
+			//std::cout << "VOUT: " << vOut.x << ", " << vOut.y << ", " << vOut.z << std::endl;
+			
+			Color l_in = traceRay(Ray (hit.pos + hit.n*STEP_EPSILON, vOut), depth +1);
+			//std::cout << l_in.r << " " << l_in.g << " " << l_in.b << std::endl;
+			outRadiance = outRadiance + (l_in * fres) ; 
 		}
 		if (hit.material->refractive) {
 			Color fres = hit.material -> fresnel(norm,vIn);
@@ -455,34 +482,30 @@ struct World {
 	Room room;
 	
 	World() {
-		cam = Camera(Vector(3,0,-4.9), Vector(0.2,0,1), Vector(0,1,0));
+		cam = Camera(Vector(.1,0,0), Vector(1,0,0), Vector(0,1,0));
 		screen = Screen();
 		room = Room();
-		
 	
-		room.objectNumber = 7;
-		room.lightNumber = 1;
-	
-		room.objects[0] = new Plain(&SIMPLE,Vector(10,0,0),Vector(-1,0,0));
-		room.objects[1] = new Plain(&SIMPLE2,Vector(10,0,-5),Vector(0,0,1));
-		room.objects[2] = new Plain(&GOLD,Vector(10,0,5),Vector(0,0,-1));
-		room.objects[3] = new Plain(new Material(Color(1,1,1)),Vector(10,5,0),Vector(0,-1,0));
-		room.objects[4] = new Plain(new Material(Color(.5,0,0)),Vector(10,-5,0),Vector(0,1,0));
-		room.objects[5] = new Plain(&SIMPLE,Vector(0,0,0),Vector(1,0,0));
+		room.addObject( new Plain(&SIMPLE,Vector(10,0,0),Vector(-1,0,0)));
+		room.addObject( new Plain(&SIMPLE2,Vector(10,0,-5),Vector(0,0,1)));
+		//room.addObject( new Plain(&GOLD,Vector(10,0,5),Vector(0,0,-1)));
+		room.addObject( new Plain(new Material(Color(1,1,1)),Vector(10,5,0),Vector(0,-1,0)));
+		room.addObject( new Plain(new Material(Color(.5,0,0)),Vector(10,-5,0),Vector(0,1,0)));
+		room.addObject( new Plain(&SIMPLE,Vector(0,0,0),Vector(1,0,0)));
 		QuadraticShape* qs = new QuadraticShape(&GOLD);
+		QuadraticShape* qs2 = new QuadraticShape(&GLASS);
 		
+		qs2 -> A = 2;
+		qs2 -> B = 2;
+		qs2 -> C = 1;
+		qs2 -> D = 0;
+		qs2 -> E = 0;
+		qs2 -> F = 0;
+		qs2 -> G = -20;
+		qs2 -> H = 0;
+		qs2 -> I = 0;
+		qs2 -> J = 48;
 		
-		/*qs -> A = 2;
-		qs -> B = 2;
-		qs -> C = 1;
-		qs -> D = 0;
-		qs -> E = 0;
-		qs -> F = 0;
-		qs -> G = -20;
-		qs -> H = 0;
-		qs -> I = 0;
-		qs -> J = 48;
-		*/
 		
 		qs -> A = 1;
 		qs -> B = 1;
@@ -493,11 +516,23 @@ struct World {
 		qs -> G = -10;
 		qs -> H = 0;
 		qs -> I = -10;
-		qs -> J = 25;
+		qs -> J = 50;
 		
-		room.objects[6] = qs;
+		/*qs -> A = 0;
+		qs -> B = 0;
+		qs -> C = 0;
+		qs -> D = 0;
+		qs -> E = 0;
+		qs -> F = 0;
+		qs -> G = 0;
+		qs -> H = 0;
+		qs -> I = 1;
+		qs -> J = -5;*/
 		
-		room.lights[0] = new PointLight(Vector(8,3,-2), Vector(), Color(1,1,1), 40);	
+		room.addObject(qs);
+		room.addObject(qs2);
+		
+		room.addLight( new PointLight(Vector(8,3,-2), Vector(), Color(1,1,1), 40));	
 		
 	}
 	
@@ -506,8 +541,9 @@ struct World {
 	void render() {
 		glViewport(0, 0, screen.WIDTH, screen.HEIGHT);
 		for(int Y = 0; Y < screen.HEIGHT; Y++)
-			for(int X = 0; X < screen.WIDTH; X++)
+			for(int X = 0; X < screen.WIDTH; X++) {
 				screen.image[Y*screen.WIDTH + X] = room.traceRay(cam.getRay(X,Y));
+		}
 	}
 };
 
