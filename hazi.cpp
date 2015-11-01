@@ -297,10 +297,18 @@ struct QuadraticShape : public Object {
 			if (Bv * Bv < 4 * Av * Cv) return Intersection();
 			float Dv = sqrt(Bv * Bv - 4 * Av * Cv);
 			
-			float t0 = (Dv - Bv) / 2 / Av;
-			float t1 = (-1 * Dv - Bv) /2 /Av;
+			float param;
 			
-			float param = t0 > t1 ? t1 : t0;
+			if (fabs(Av) < EPSILON) {
+				param = -Cv / Bv;
+			} else {
+				float t0 = (Dv - Bv) / 2 / Av;
+				float t1 = (-1 * Dv - Bv) /2 /Av;
+			
+				param = t0 > t1 ? t1 : t0;
+			}
+			
+			
 			
 			
 			Vector inter = ray.getVec(param);
@@ -309,9 +317,13 @@ struct QuadraticShape : public Object {
 			float ny = 2 * B * inter.y + D * inter.x + F * inter.z + H;
 			float nz = 2 * C * inter.z + E * inter.x + F * inter.y + I;
 			
-			Vector n = Vector(nx,ny,nz).norm();
+			Vector n = Vector(-nx,ny,nz).norm();
 			
-			if (inter * ray.dir < 0) n = n*-1;
+			//n = n % inter;
+			n = n.norm();
+			
+			
+			if (inter * ray.dir > 0) n = n*-1;
 			
 			
 			return Intersection(inter,n,param,m);
@@ -443,12 +455,12 @@ struct World {
 	Room room;
 	
 	World() {
-		cam = Camera(Vector(0,0,0), Vector(0,0,1), Vector(0,1,0));
+		cam = Camera(Vector(3,0,-4.9), Vector(0.2,0,1), Vector(0,1,0));
 		screen = Screen();
 		room = Room();
 		
 	
-		room.objectNumber = 6;
+		room.objectNumber = 7;
 		room.lightNumber = 1;
 	
 		room.objects[0] = new Plain(&SIMPLE,Vector(10,0,0),Vector(-1,0,0));
@@ -457,7 +469,7 @@ struct World {
 		room.objects[3] = new Plain(new Material(Color(1,1,1)),Vector(10,5,0),Vector(0,-1,0));
 		room.objects[4] = new Plain(new Material(Color(.5,0,0)),Vector(10,-5,0),Vector(0,1,0));
 		room.objects[5] = new Plain(&SIMPLE,Vector(0,0,0),Vector(1,0,0));
-		//QuadraticShape* qs = new QuadraticShape(&GOLD);
+		QuadraticShape* qs = new QuadraticShape(&GOLD);
 		
 		
 		/*qs -> A = 2;
@@ -483,7 +495,7 @@ struct World {
 		qs -> I = -10;
 		qs -> J = 25;
 		
-		//room.objects[6] = qs;
+		room.objects[6] = qs;
 		
 		room.lights[0] = new PointLight(Vector(8,3,-2), Vector(), Color(1,1,1), 40);	
 		
