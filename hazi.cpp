@@ -234,7 +234,7 @@ struct Material {
 	}
 	
 	Vector reflect(const Vector & normal, const Vector & viewIn) const {
-		return viewIn  - normal * (normal * viewIn) * 2 ;
+		return viewIn  - normal * (normal * viewIn) * 2.0 ;
 	}
 	
 	Vector refract(const Vector & normal, const Vector & viewIn) const {
@@ -255,12 +255,12 @@ struct Material {
 	
 	Color fresnel(const Vector & normal, const Vector & viewIn) const {
 		float cosalfa = fabs(normal * viewIn); 
-		return F0 + (Color(1,1,1) - F0 ) * pow(1 - cosalfa ,5);
+		return F0 + (Color(1,1,1) - F0 ) * powf(1 - cosalfa ,5);
 	}
 	
 };
 
-const Material GOLD(Color(), Color(), Color(0.17,0.35,1.5),Color(3.1,2.7,1.9),true,false,0);
+const Material GOLD(Color(1,0.88,0.25), Color(), Color(0.17,0.35,1.5),Color(3.1,2.7,1.9),true,false,0);
 const Material GLASS(Color(), Color(), Color(1.5,1.5,1.5),Color(0,0,0),true,true,0);
 const Material SIMPLE(Color(0,.5,0), Color(0,0,0), Color(),Color(),false,false,0);
 const Material SIMPLE2(Color(0,0,.5));
@@ -501,10 +501,10 @@ struct World {
 		qs2 -> D = 0;
 		qs2 -> E = 0;
 		qs2 -> F = 0;
-		qs2 -> G = -20;
+		qs2 -> G = -36;
 		qs2 -> H = 0;
 		qs2 -> I = 0;
-		qs2 -> J = 48;
+		qs2 -> J = 160;
 		
 		
 		qs -> A = 1;
@@ -532,7 +532,7 @@ struct World {
 		room.addObject(qs);
 		room.addObject(qs2);
 		
-		room.addLight( new PointLight(Vector(8,3,-2), Vector(), Color(1,1,1), 40));	
+		room.addLight( new PointLight(Vector(2,3,-2), Vector(), Color(1,1,1), 40));	
 		
 	}
 	
