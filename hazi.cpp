@@ -325,7 +325,6 @@ Color stripes(const Vector & pos) {
 		return Color(magic,magic,magic);
 }
 
-SimplePattern STRIPES(&stripes);
 ShadowPattern STRIPES_SHAD(&stripes);
 TwoColoredPattern STRIPES_TWO(&stripes, Color(.5,0,0));
 
@@ -347,8 +346,37 @@ struct Object {
 	virtual ~Object () {}
 };
 
+struct Plain : public Object {
+	Vector p,n;
+	
+	Plain(const Material* m ,Vector _p, Vector _n) :Object(m), p(_p), n(_n.norm()) {}
+	
+	Intersection intersect(const Ray& ray) {
+		if (fabs(ray.dir * n) < EPSILON) return Intersection();
+		float intersection_param = ((p - ray.p0) * n)/(ray.dir * n);
+		if (intersection_param < 0) return Intersection();
+		return Intersection(ray.getVec(intersection_param),n,intersection_param,m);
+	}
+};
+
 struct QuadraticShape : public Object {
 		float A,B,C,D,E,F,G,H,I,J;
+		
+		Vector getNormalAt(Vector inter, Vector dir) {
+			float nx = 2 * A * inter.x + D * inter.y + E * inter.z + G;
+			float ny = 2 * B * inter.y + D * inter.x + F * inter.z + H;
+			float nz = 2 * C * inter.z + E * inter.x + F * inter.y + I;
+			
+			Vector n = Vector(nx,ny,nz);
+			
+			n = n.norm();
+			
+			
+			if ((n * dir) > 0) n = n*-1;
+			
+			return n;
+			
+		}
 		
 		Intersection intersect(const Ray& ray) {
 			float x0 =ray.p0.x;
@@ -387,47 +415,25 @@ struct QuadraticShape : public Object {
 			
 			Vector inter = ray.getVec(param);
 			
-			float nx = 2 * A * inter.x + D * inter.y + E * inter.z + G;
-			float ny = 2 * B * inter.y + D * inter.x + F * inter.z + H;
-			float nz = 2 * C * inter.z + E * inter.x + F * inter.y + I;
-			
-			Vector n = Vector(nx,ny,nz);
-			
-			n = n.norm();
-			
-			
-			if ((n * ray.dir) > 0) n = n*-1;
+			Vector n = getNormalAt(inter,ray.dir);
 			
 			return Intersection(inter,n,param,m);
 			
 		}
 		
 		QuadraticShape(const Material * m) : Object(m) {}
+		QuadraticShape() : Object(&GLASS) {}
 		
 };
 
-struct Plain : public Object {
-	Vector p,n;
-	
-	Plain(const Material* m ,Vector _p, Vector _n) :Object(m), p(_p), n(_n.norm()) {}
-	
-	Intersection intersect(const Ray& ray) {
-		if (fabs(ray.dir * n) < EPSILON) return Intersection();
-		float intersection_param = ((p - ray.p0) * n)/(ray.dir * n);
-		if (intersection_param < 0) return Intersection();
-		return Intersection(ray.getVec(intersection_param),n,intersection_param,m);
-	}
-};
-
-struct Paraboloid : public Object {
+struct Paraboloid : public QuadraticShape {
 	Vector p;
 	Plain sf;
 };
 
-struct Ellipsoid : public Object {
+struct Ellipsoid : public QuadraticShape {
 	float ax_a, ax_b, ax_c;
 	
-	Ellipsoid(): Object(&GLASS) {ax_a = ax_b = ax_c = 1;}
 };
 
 struct Room {
