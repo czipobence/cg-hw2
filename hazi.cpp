@@ -208,8 +208,8 @@ struct Material {
 	Color pattern(const Vector& posO) const {
 		Vector pos = posO;
 		
-		float magic = ((int)(fabs(pos.x)+ fabs(pos.y-5) + fabs(pos.z+5)) * 3) % 2 == 0 ? 1 : 0.7;
-		return Color(magic,magic,magic);
+		float magic = ((int)(fabs(pos.x)+ fabs(pos.y-5) + fabs(pos.z+5)) * 3) % 2 == 0 ? 1 : .7;
+		return kd * Color(magic,magic,magic);
 	}
 	
 	Color shade(const Ray & ray, const Intersection& inter, Light* light) const {
@@ -223,7 +223,7 @@ struct Material {
 		if (cosTheta <= 0) {
 			return Color();
 		}
-		lumOut = lumIn * kd * cosTheta * pattern(inter.pos);
+		lumOut = lumIn *  cosTheta * pattern(inter.pos);
 		
 		Vector half = (view + lDir).norm();
 		float cosDelta = normal * half;
@@ -325,9 +325,7 @@ struct QuadraticShape : public Object {
 			n = n.norm();
 			
 			
-			if (inter * ray.dir < 0) n = n*(-1);
-			
-			//n = Vector(0,0,-1);
+			if ((inter % ray.dir).Length() < 0) n = n*-1;
 			
 			return Intersection(inter,n,param,m);
 			
@@ -430,7 +428,7 @@ struct Room {
 		if (hit.material->refractive) {
 			Color fres = hit.material -> fresnel(norm,vIn);
 			//std::cout << (Color(1,1,1) - fres).r << " " << outRadiance.r << std::endl;
-			outRadiance = outRadiance + traceRay(Ray (hit.pos - hit.n*STEP_EPSILON, hit.material -> refract(norm,vIn)), depth +1) * (Color(1,1,1) - fres); 
+			outRadiance = outRadiance + traceRay(Ray (hit.pos + hit.n*STEP_EPSILON, hit.material -> refract(norm,vIn)), depth +1) * (Color(1,1,1) - fres); 
 		}
 		return outRadiance;
 	}
@@ -458,7 +456,7 @@ struct Camera {
 	Vector pos,dir,up, right;
 	
 	Camera() {
-		*this = Camera(Vector(0.01,0,0), Vector(1,0,1), Vector(0,1,0));
+		*this = Camera(Vector(0.01,0,0), Vector(1,0,0), Vector(0,1,0));
 	}
 	
 	Camera(Vector pos, Vector dir, Vector up) {
@@ -482,15 +480,15 @@ struct World {
 	Room room;
 	
 	World() {
-		cam = Camera(Vector(.1,0,0), Vector(1,0,0), Vector(0,1,0));
+		//cam = Camera(Vector(.1,0,0), Vector(1,0,0), Vector(0,1,0));
 		screen = Screen();
 		room = Room();
 	
 		room.addObject( new Plain(&SIMPLE,Vector(10,0,0),Vector(-1,0,0)));
 		room.addObject( new Plain(&SIMPLE2,Vector(10,0,-5),Vector(0,0,1)));
 		//room.addObject( new Plain(&GOLD,Vector(10,0,5),Vector(0,0,-1)));
-		room.addObject( new Plain(new Material(Color(1,1,1)),Vector(10,5,0),Vector(0,-1,0)));
-		room.addObject( new Plain(new Material(Color(.5,0,0)),Vector(10,-5,0),Vector(0,1,0)));
+		room.addObject( new Plain(new Material(Color(0,0,.8)),Vector(10,5,0),Vector(0,-1,0)));
+		room.addObject( new Plain(new Material(Color(0,0,.8)),Vector(10,-5,0),Vector(0,1,0)));
 		room.addObject( new Plain(&SIMPLE,Vector(0,0,0),Vector(1,0,0)));
 		QuadraticShape* qs = new QuadraticShape(&GOLD);
 		QuadraticShape* qs2 = new QuadraticShape(&GLASS);
@@ -549,10 +547,14 @@ struct World {
 
 World world;
 
+Vector camPos = Vector(.1,0,0);
+Vector camFwd = Vector(1,0,1);
+Vector camUp = Vector(0,1,0);
+
 // Inicializacio, a program futasanak kezdeten, az OpenGL kontextus letrehozasa utan hivodik meg (ld. main() fv.)
 void onInitialization( ) { 
 	
-	world.render();
+	
 
 }
 
@@ -561,6 +563,8 @@ void onDisplay( ) {
     glClearColor(0.1f, 0.2f, 0.3f, 1.0f);		// torlesi szin beallitasa
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // kepernyo torles
 
+	world.cam = Camera(camPos,camFwd,camUp);
+	world.render();
 	world.draw();
 
     glutSwapBuffers();     				// Buffercsere: rajzolas vege
@@ -575,6 +579,45 @@ void onKeyboard(unsigned char key, int x, int y) {
 		//calculateImage(time)
 		glutPostRedisplay( );
 	}
+	float UNIT = .5;
+	if (key == 'a') {
+		camPos.z -= UNIT;
+		glutPostRedisplay( );
+	}
+	if (key == 'd') {
+		camPos.z += UNIT;
+		glutPostRedisplay( );
+	}
+	if (key == 'w') {
+		camPos.y += UNIT;
+		glutPostRedisplay( );
+	}
+	if (key == 's') {
+		camPos.y -= UNIT;
+		glutPostRedisplay( );
+	}
+	if (key == 'r') {
+		camPos.x += UNIT;
+		glutPostRedisplay( );
+	}
+	if (key == 'f') {
+		camPos.x -= UNIT;
+		glutPostRedisplay( );
+	}
+	if (key == '6') {
+		camFwd = (camFwd % camUp + camFwd * 3) / 4; 
+		glutPostRedisplay( );
+	}
+	if (key == '4') {
+		camFwd = (camUp % camFwd + camFwd * 3) / 4; 
+		glutPostRedisplay( );
+	}
+	if (key == '8') {
+		camFwd = (world.cam.right % world.cam.dir + world.cam.dir*3) / 4; 
+		camUp = world.cam.right % world.cam.dir;
+		glutPostRedisplay( );
+	}
+
 
 }
 
