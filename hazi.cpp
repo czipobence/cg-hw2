@@ -326,7 +326,7 @@ struct QuadraticShape : public Object {
 			n = n.norm();
 			
 			
-			if ((inter % ray.dir).Length() < 0) n = n*-1;
+			if ((n * ray.dir) > 0) n = n*-1;
 			
 			return Intersection(inter,n,param,m);
 			
@@ -488,8 +488,8 @@ struct World {
 		room.addObject( new Plain(&SIMPLE,Vector(10,0,0),Vector(-1,0,0)));
 		room.addObject( new Plain(&SIMPLE2,Vector(10,0,-5),Vector(0,0,1)));
 		//room.addObject( new Plain(&GOLD,Vector(10,0,5),Vector(0,0,-1)));
-		room.addObject( new Plain(new Material(Color(0,0,.8)),Vector(10,5,0),Vector(0,-1,0)));
-		room.addObject( new Plain(new Material(Color(0,0,.8)),Vector(10,-5,0),Vector(0,1,0)));
+		room.addObject( new Plain(new Material(Color(.9,.9,.9)),Vector(10,5,0),Vector(0,-1,0)));
+		room.addObject( new Plain(new Material(Color(.5,0,0)),Vector(10,-5,0),Vector(0,1,0)));
 		room.addObject( new Plain(&SIMPLE,Vector(0,0,0),Vector(1,0,0)));
 		QuadraticShape* qs = new QuadraticShape(&GOLD);
 		QuadraticShape* qs2 = new QuadraticShape(&GLASS);
@@ -615,6 +615,11 @@ void onKeyboard(unsigned char key, int x, int y) {
 	}
 	if (key == '8') {
 		camFwd = (world.cam.right % world.cam.dir + world.cam.dir*3) / 4; 
+		camUp = world.cam.right % world.cam.dir;
+		glutPostRedisplay( );
+	}
+	if (key == '2') {
+		camFwd = (world.cam.dir % world.cam.right + world.cam.dir*3) / 4; 
 		camUp = world.cam.right % world.cam.dir;
 		glutPostRedisplay( );
 	}
