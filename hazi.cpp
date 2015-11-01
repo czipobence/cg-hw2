@@ -65,7 +65,7 @@
 const float EPSILON = 0.001;
 const float STEP_EPSILON = 0.1;
 const float C = 1.0;
-const int MAX_DEPTH = 3;
+const int MAX_DEPTH = 6;
 const float T_MAX = 1000;
 int CALC_TIME = 0;
 
@@ -135,7 +135,7 @@ struct Color {
    }
 };
 
-const Color AMBIENT_LIGHT(.25,.25,.25);
+const Color AMBIENT_LIGHT(.35,.35,.35);
 
 struct Light {
 	Vector pos,vel;
@@ -205,6 +205,13 @@ struct Material {
 		shin = 0;
 	}
 	
+	Color pattern(const Vector& posO) const {
+		Vector pos = posO;
+		
+		float magic = ((int)(fabs(pos.x)+ fabs(pos.y-5) + fabs(pos.z+5)) * 3) % 2 == 0 ? 1 : 0.7;
+		return Color(magic,magic,magic);
+	}
+	
 	Color shade(const Ray & ray, const Intersection& inter, Light* light) const {
 		Vector normal = inter.n;
 		Vector view = (ray.dir * -1).norm();
@@ -216,7 +223,7 @@ struct Material {
 		if (cosTheta <= 0) {
 			return Color();
 		}
-		lumOut = lumIn * kd * cosTheta;
+		lumOut = lumIn * kd * cosTheta * pattern(inter.pos);
 		
 		Vector half = (view + lDir).norm();
 		float cosDelta = normal * half;
@@ -230,7 +237,19 @@ struct Material {
 	}
 	
 	Vector refract(const Vector & normal, const Vector & viewIn) const {
-		return viewIn;
+		float cosalpha = -1 * (normal * viewIn);
+		float rn = (n.r + n.g + n.b) / 3.0;
+		Vector norm = normal;
+		if (cosalpha < 0) {
+			cosalpha *= -1;
+			norm = normal * -1;
+			rn = 1.0/rn;
+		}
+		
+		float disc = 1 - (1 - cosalpha * cosalpha) / rn /rn;
+		if (disc < 0) return reflect(norm,viewIn);
+		return (viewIn / rn + norm * (cosalpha / rn - sqrt(disc))).norm();
+		
 	}
 	
 	Color fresnel(const Vector & normal, const Vector & viewIn) const {
@@ -241,8 +260,8 @@ struct Material {
 };
 
 const Material GOLD(Color(), Color(), Color(0.17,0.35,1.5),Color(3.1,2.7,1.9),true,false,0);
-const Material GLASS(Color(), Color(), Color(1.5,1.5,1.5),Color(0,0,0),true,false,0);
-const Material SIMPLE(Color(0,.5,0), Color(0,0,0), Color(),Color(),false,false,5);
+const Material GLASS(Color(), Color(), Color(1.5,1.5,1.5),Color(0,0,0),true,true,0);
+const Material SIMPLE(Color(0,.5,0), Color(0,0,0), Color(),Color(),false,false,0);
 const Material SIMPLE2(Color(0,0,.5));
 
 
@@ -255,6 +274,52 @@ struct Object {
 	
 	virtual Intersection intersect(const Ray& ray) { return Intersection();}
 	virtual ~Object () {}
+};
+
+struct QuadraticShape : public Object {
+		float A,B,C,D,E,F,G,H,I,J;
+		
+		Intersection intersect(const Ray& ray) {
+			float x0 =ray.p0.x;
+			float y0 = ray.p0.y;
+			float z0 = ray.p0.z;
+			float xd = ray.dir.x;
+			float yd = ray.dir.y;
+			float zd = ray.dir.z;
+			
+			
+			float Av = A * xd *xd + B * yd *yd + C * zd * zd + D * xd * yd + E * xd *zd + F * yd * zd;
+			float Bv = 2 * (A * x0 * xd + B * y0*yd + C * z0*zd) + D * (x0*yd + xd*y0) +
+			E * (x0 * zd + xd * z0) + F * (y0*zd+ yd* z0) + G * xd + H * yd + I * zd;
+			float Cv = A * x0 * x0 + B * y0 * y0 + C * z0 * z0 + D * x0*y0 + E * x0 *z0 + F * y0*z0 + 
+			G*x0+ H *y0+ I * z0+ J;
+			
+			if (Bv * Bv < 4 * Av * Cv) return Intersection();
+			float Dv = sqrt(Bv * Bv - 4 * Av * Cv);
+			
+			float t0 = (Dv - Bv) / 2 / Av;
+			float t1 = (-1 * Dv - Bv) /2 /Av;
+			
+			float param = t0 > t1 ? t1 : t0;
+			
+			
+			Vector inter = ray.getVec(param);
+			
+			float nx = 2 * A * inter.x + D * inter.y + E * inter.z + G;
+			float ny = 2 * B * inter.y + D * inter.x + F * inter.z + H;
+			float nz = 2 * C * inter.z + E * inter.x + F * inter.y + I;
+			
+			Vector n = Vector(nx,ny,nz).norm();
+			
+			if (inter * ray.dir < 0) n = n*-1;
+			
+			
+			return Intersection(inter,n,param,m);
+			
+		}
+		
+		QuadraticShape(const Material * m) : Object(m) {}
+		
 };
 
 struct Plain : public Object {
@@ -324,7 +389,9 @@ struct Room {
 			outRadiance = outRadiance + traceRay(Ray (hit.pos + hit.n*STEP_EPSILON, hit.material -> reflect(norm,vIn)), depth +1) * fres ; 
 		}
 		if (hit.material->refractive) {
-			//outRadiance = outRadiance + traceRay(Ray (hit.pos + hit.n*STEP_EPSILON, hit.material -> refract(norm,vIn)), depth +1) ; 
+			Color fres = hit.material -> fresnel(norm,vIn);
+			//std::cout << (Color(1,1,1) - fres).r << " " << outRadiance.r << std::endl;
+			outRadiance = outRadiance + traceRay(Ray (hit.pos - hit.n*STEP_EPSILON, hit.material -> refract(norm,vIn)), depth +1) * (Color(1,1,1) - fres); 
 		}
 		return outRadiance;
 	}
@@ -352,7 +419,7 @@ struct Camera {
 	Vector pos,dir,up, right;
 	
 	Camera() {
-		*this = Camera(Vector(0.01,0,0), Vector(1,0,0), Vector(0,1,0));
+		*this = Camera(Vector(0.01,0,0), Vector(1,0,1), Vector(0,1,0));
 	}
 	
 	Camera(Vector pos, Vector dir, Vector up) {
@@ -376,7 +443,7 @@ struct World {
 	Room room;
 	
 	World() {
-		cam = Camera(Vector(0.01,0,0), Vector(1,0,0), Vector(0,1,0));
+		cam = Camera(Vector(0,0,0), Vector(0,0,1), Vector(0,1,0));
 		screen = Screen();
 		room = Room();
 		
@@ -390,9 +457,35 @@ struct World {
 		room.objects[3] = new Plain(new Material(Color(1,1,1)),Vector(10,5,0),Vector(0,-1,0));
 		room.objects[4] = new Plain(new Material(Color(.5,0,0)),Vector(10,-5,0),Vector(0,1,0));
 		room.objects[5] = new Plain(&SIMPLE,Vector(0,0,0),Vector(1,0,0));
+		//QuadraticShape* qs = new QuadraticShape(&GOLD);
 		
 		
-		room.lights[0] = new PointLight(Vector(2,0,0), Vector(), Color(1,1,1), 50);	
+		/*qs -> A = 2;
+		qs -> B = 2;
+		qs -> C = 1;
+		qs -> D = 0;
+		qs -> E = 0;
+		qs -> F = 0;
+		qs -> G = -20;
+		qs -> H = 0;
+		qs -> I = 0;
+		qs -> J = 48;
+		*/
+		
+		qs -> A = 1;
+		qs -> B = 1;
+		qs -> C = 0;
+		qs -> D = 0;
+		qs -> E = 0;
+		qs -> F = 0;
+		qs -> G = -10;
+		qs -> H = 0;
+		qs -> I = -10;
+		qs -> J = 25;
+		
+		//room.objects[6] = qs;
+		
+		room.lights[0] = new PointLight(Vector(8,3,-2), Vector(), Color(1,1,1), 40);	
 		
 	}
 	
