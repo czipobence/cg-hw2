@@ -582,27 +582,28 @@ void onKeyboard(unsigned char key, int x, int y) {
 	}
 	float UNIT = .5;
 	if (key == 'a') {
-		camPos.z -= UNIT;
+		camPos = camPos - world.cam.right * UNIT;
 		glutPostRedisplay( );
 	}
 	if (key == 'd') {
-		camPos.z += UNIT;
+		camPos = camPos + world.cam.right * UNIT;
 		glutPostRedisplay( );
 	}
 	if (key == 'w') {
-		camPos.y += UNIT;
+		camPos = camPos + world.cam.dir * UNIT;
 		glutPostRedisplay( );
 	}
 	if (key == 's') {
-		camPos.y -= UNIT;
+		camPos = camPos - world.cam.dir * UNIT;
 		glutPostRedisplay( );
 	}
 	if (key == 'r') {
+		camPos = camPos + world.cam.up * UNIT;
 		camPos.x += UNIT;
 		glutPostRedisplay( );
 	}
 	if (key == 'f') {
-		camPos.x -= UNIT;
+		camPos = camPos - world.cam.up * UNIT;
 		glutPostRedisplay( );
 	}
 	if (key == '6') {
