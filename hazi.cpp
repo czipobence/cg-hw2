@@ -127,6 +127,9 @@ struct Color {
    Color operator*(const Color& c) const { 
 	return Color(r * c.r, g * c.g, b * c.b); 
    }
+   Color operator/(const Color& c) const { 
+	return Color(r / c.r, g / c.g, b / c.b); 
+   }
    Color operator+(const Color& c) const {
  	return Color(r + c.r, g + c.g, b + c.b); 
    }
@@ -186,11 +189,9 @@ struct Material {
 	bool reflective,refractive;
 	float shin;
 	Material(Color _kd, Color _ks, Color _n, Color _k, bool refl, bool refr, float _s) :
-	 kd(_kd), ks(_ks), n(_n), reflective(refl), refractive(refr), shin(_s) {
-		float fr = ((n.r -1) * (n.r -1)  + _k.r * _k.r) / ((n.r + 1) * (n.r + 1)  + _k.r * _k.r);
-		float fg = ((n.g -1) * (n.g -1)  + _k.g * _k.g) / ((n.g + 1) * (n.g + 1)  + _k.g * _k.g);
-		float fb = ((n.b -1) * (n.b -1)  + _k.b * _k.b) / ((n.b + 1) * (n.b + 1)  + _k.b * _k.b);
-		F0 = Color(fr,fg,fb); 
+	 kd(_kd), ks(_ks), n(_n), reflective(refl), refractive(refr), shin(_s) {		
+		this->F0 = (n - Color(1, 1, 1) * (n - Color(1, 1, 1)) + _k*_k) / ((n + Color(1, 1, 1))*(n + Color(1, 1, 1)) + _k*_k);
+		
 	}
 	Material(Color c) {
 		*this = Material();
