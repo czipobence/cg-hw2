@@ -485,7 +485,7 @@ struct World {
 		screen = Screen();
 		room = Room();
 	
-		room.addObject( new Plain(&SIMPLE,Vector(10,0,0),Vector(-1,0,0)));
+		room.addObject( new Plain(&GLASS,Vector(10,0,0),Vector(-1,0,0)));
 		room.addObject( new Plain(&SIMPLE2,Vector(10,0,-5),Vector(0,0,1)));
 		//room.addObject( new Plain(&GOLD,Vector(10,0,5),Vector(0,0,-1)));
 		room.addObject( new Plain(new Material(Color(.9,.9,.9)),Vector(10,5,0),Vector(0,-1,0)));
@@ -529,7 +529,7 @@ struct World {
 		qs -> J = -5;*/
 		
 		room.addObject(qs);
-		room.addObject(qs2);
+		//room.addObject(qs2);
 		
 		room.addLight( new PointLight(Vector(8,3,-2), Vector(), Color(1,1,1), 40));	
 		
