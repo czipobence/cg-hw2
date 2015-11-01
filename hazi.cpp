@@ -185,6 +185,32 @@ struct Ray {
 	}
 };
 
+struct Pattern {
+	virtual Color getPattern(const Vector& pos, const Color& col) const = 0;
+	virtual ~Pattern() {}
+};
+
+struct SimplePattern : public Pattern {
+	Color (*pattern_func)(const Vector&);
+	
+	SimplePattern(Color (*_pf)(const Vector&)) : pattern_func(_pf) {}
+	
+	virtual Color getPattern(const Vector& pos, const Color& col) const {
+		return col * pattern_func(pos);
+	}
+};
+
+struct TwoColoredPattern : public Pattern {
+	Color (*pattern_func)(const Vector&);
+	Color secondary;
+	TwoColoredPattern(Color (*_pf)(const Vector&), Color _sec) : pattern_func(_pf), secondary(_sec) {}
+	
+	virtual Color getPattern(const Vector& pos, const Color& col) const {
+		return col * pattern_func(pos) + secondary * (Color(1,1,1) - pattern_func(pos));
+	}
+
+};
+
 struct Material {
 	Color kd ,ks;
 	Color n, F0; 
@@ -269,30 +295,16 @@ struct Material {
 };
 
 struct PatternedMaterial : public Material {
+	const Pattern* pattern;
 	
-	PatternedMaterial(Color _kd, Color _ks, Color _n, Color _k, bool refl, bool refr, float _s) :
-	Material(_kd,_ks,_n,_k,refl,refr,_s) {}
-	PatternedMaterial(Color c) : Material(c) {}
-	PatternedMaterial() : Material() {}
-	
-	virtual Color get_kd(const Vector& pos) const {
-		float magic = ((int)(fabs(pos.x)+ fabs(pos.y-5) + fabs(pos.z+5)) * 3) % 2 == 0 ? 1 : .7;
-		return kd * Color(magic,magic,magic);
-	}
-};
-
-struct ShadowPatternedMaterial : public Material {
-	Color (*shadow)(const Vector&);
-	
-	ShadowPatternedMaterial(Color _kd, Color _ks, Color _n, Color _k, bool refl, bool refr, float _s, Color (*shad)(const Vector&)) :
-	Material(_kd,_ks,_n,_k,refl,refr,_s), shadow(shad) {}
-	ShadowPatternedMaterial(Color c, Color (*shad)(const Vector&)) : Material(c), shadow(shad) {}
-	ShadowPatternedMaterial( Color (*shad)(const Vector&)) : Material(), shadow(shad) {}
+	PatternedMaterial(Color _kd, Color _ks, Color _n, Color _k, bool refl, bool refr, float _s, const Pattern* _pattern) :
+	Material(_kd,_ks,_n,_k,refl,refr,_s), pattern(_pattern) {}
+	PatternedMaterial(Color c, const Pattern* _pattern) : Material(c), pattern(_pattern) {}
+	PatternedMaterial(const Pattern* _pattern) : Material(), pattern(_pattern) {}
 	
 	virtual Color get_kd(const Vector& pos) const {
-		return kd * shadow(pos);
+		return pattern->getPattern(pos,kd);
 	}
-	
 };
 
 
@@ -301,11 +313,13 @@ Color stripes(const Vector & pos) {
 		return Color(magic,magic,magic);
 }
 
+SimplePattern STRIPES(&stripes);
+
 //kd from https://en.wikibooks.org/wiki/Blender_3D:_Noob_to_Pro/Every_Material_Known_to_Man/Gold
 const Material GOLD(Color(1,0.88,0.25), Color(), Color(0.17,0.35,1.5),Color(3.1,2.7,1.9),true,false,0);
 const Material GLASS(Color(), Color(), Color(1.5,1.5,1.5),Color(0,0,0),true,true,0);
-const PatternedMaterial SIMPLE(Color(0,.5,0), Color(0,0,0), Color(),Color(),false,false,0);
-const ShadowPatternedMaterial SIMPLE2(Color(0,0,.5), &stripes);
+const PatternedMaterial SIMPLE(Color(0,.5,0), Color(0,0,0), Color(),Color(),false,false,0, &STRIPES);
+const PatternedMaterial SIMPLE2(Color(0,0,.5), &STRIPES);
 
 
 struct Object {
@@ -440,7 +454,7 @@ struct Room {
 		
 		if (hit.material == NULL) return Color();
 		if (hit.t <= 0) return Color();
-		Color outRadiance = AMBIENT_LIGHT * hit.material -> kd;
+		Color outRadiance = AMBIENT_LIGHT * hit.material -> get_kd(hit.pos);
 		
 
 		Vector norm = hit.n;
