@@ -196,7 +196,19 @@ struct SimplePattern : public Pattern {
 	SimplePattern(Color (*_pf)(const Vector&)) : pattern_func(_pf) {}
 	
 	virtual Color getPattern(const Vector& pos, const Color& col) const {
-		return col * pattern_func(pos);
+		return pattern_func(pos);
+	}
+};
+
+
+struct ShadowPattern : public Pattern {
+	Color (*pattern_func)(const Vector&);
+	const Color intensity;
+	ShadowPattern(Color (*_pf)(const Vector&), float _in = 0.7f) : pattern_func(_pf), intensity(Color(_in,_in,_in)) {}
+	ShadowPattern(Color (*_pf)(const Vector&), const Color& _in) : pattern_func(_pf), intensity(_in) {}
+	
+	virtual Color getPattern(const Vector& pos, const Color& col) const {
+		return col * (intensity + (Color(1,1,1) -intensity) * pattern_func(pos));
 	}
 };
 
@@ -309,17 +321,19 @@ struct PatternedMaterial : public Material {
 
 
 Color stripes(const Vector & pos) {
-		float magic = ((int)(fabs(pos.x)+ fabs(pos.y-5) + fabs(pos.z+5)) * 3) % 2 == 0 ? 1 : .7;
+		float magic = ((int)(fabs(pos.x)+ fabs(pos.y-5) + fabs(pos.z+5)) * 3) % 2 == 0 ? 1 : 0;
 		return Color(magic,magic,magic);
 }
 
 SimplePattern STRIPES(&stripes);
+ShadowPattern STRIPES_SHAD(&stripes);
+TwoColoredPattern STRIPES_TWO(&stripes, Color(.5,0,0));
 
 //kd from https://en.wikibooks.org/wiki/Blender_3D:_Noob_to_Pro/Every_Material_Known_to_Man/Gold
 const Material GOLD(Color(1,0.88,0.25), Color(), Color(0.17,0.35,1.5),Color(3.1,2.7,1.9),true,false,0);
 const Material GLASS(Color(), Color(), Color(1.5,1.5,1.5),Color(0,0,0),true,true,0);
-const PatternedMaterial SIMPLE(Color(0,.5,0), Color(0,0,0), Color(),Color(),false,false,0, &STRIPES);
-const PatternedMaterial SIMPLE2(Color(0,0,.5), &STRIPES);
+const PatternedMaterial SIMPLE(Color(0,.5,0), Color(0,0,0), Color(),Color(),false,false,0, &STRIPES_TWO);
+const PatternedMaterial SIMPLE2(Color(0,0,.5), &STRIPES_SHAD);
 
 
 struct Object {
