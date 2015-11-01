@@ -65,7 +65,7 @@
 const float EPSILON = 0.001;
 const float STEP_EPSILON = 0.1;
 const float C = 1.0;
-const int MAX_DEPTH = 6;
+const int MAX_DEPTH = 5;
 const float T_MAX = 1000;
 int CALC_TIME = 0;
 
@@ -151,6 +151,8 @@ struct Light {
 	virtual Color getLumAt(Vector vpos, float t) {
 		return AMBIENT_LIGHT;
 	}
+	
+	virtual ~Light() {}
 
 };
 
@@ -433,6 +435,12 @@ struct Room {
 		}
 		return outRadiance;
 	}
+	
+	~Room() {
+		for (int i = 0; i< objectNumber; i++) delete objects[i];
+		for (int i = 0; i< lightNumber; i++) delete lights[i];
+	}
+	
 };
 
 struct Screen {
@@ -482,8 +490,8 @@ struct World {
 	
 	World() {
 		//cam = Camera(Vector(.1,0,0), Vector(1,0,0), Vector(0,1,0));
-		screen = Screen();
-		room = Room();
+		//screen = Screen();
+		//room = Room();
 	
 		room.addObject( new Plain(&SIMPLE,Vector(10,0,0),Vector(-1,0,0)));
 		//room.addObject( new Plain(&GLASS,Vector(10.1,0,0),Vector(1,0,0)));
