@@ -200,7 +200,6 @@ struct SimplePattern : public Pattern {
 	}
 };
 
-
 struct ShadowPattern : public Pattern {
 	Color (*pattern_func)(const Vector&);
 	const Color intensity;
@@ -423,6 +422,7 @@ struct QuadraticShape : public Object {
 		
 		QuadraticShape(const Material * m) : Object(m) {}
 		QuadraticShape() : Object(&GLASS) {}
+		virtual ~QuadraticShape() {}
 		
 };
 
