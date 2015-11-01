@@ -300,6 +300,7 @@ struct QuadraticShape : public Object {
 			float param;
 			
 			if (fabs(Av) < EPSILON) {
+				if (fabs(Bv) < EPSILON) return Intersection();
 				param = -Cv / Bv;
 			} else {
 				float t0 = (Dv - Bv) / 2 / Av;
@@ -324,7 +325,6 @@ struct QuadraticShape : public Object {
 			
 			
 			if (inter * ray.dir > 0) n = n*-1;
-			
 			
 			return Intersection(inter,n,param,m);
 			
