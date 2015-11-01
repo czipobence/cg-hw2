@@ -138,7 +138,7 @@ struct Color {
    }
 };
 
-const Color AMBIENT_LIGHT(.1,.1,.1);
+const Color AMBIENT_LIGHT(.3,.3,.3);
 
 struct Light {
 	Vector pos,vel;
@@ -208,11 +208,8 @@ struct Material {
 		shin = 0;
 	}
 	
-	Color pattern(const Vector& posO) const {
-		Vector pos = posO;
-		
-		float magic = ((int)(fabs(pos.x)+ fabs(pos.y-5) + fabs(pos.z+5)) * 3) % 2 == 0 ? 1 : .7;
-		return kd * Color(magic,magic,magic);
+	virtual Color get_kd(const Vector& posO) const {
+		return kd;
 	}
 	
 	Color shade(const Ray & ray, const Intersection& inter, Light* light) const {
@@ -226,7 +223,7 @@ struct Material {
 		if (cosTheta <= 0) {
 			return Color();
 		}
-		lumOut = lumIn *  cosTheta * pattern(inter.pos);
+		lumOut = lumIn *  cosTheta * get_kd(inter.pos);
 		
 		Vector half = (view + lDir).norm();
 		float cosDelta = normal * half;
@@ -260,8 +257,22 @@ struct Material {
 		return F0 + (Color(1,1,1) - F0 ) * powf(1 - cosalfa ,5);
 	}
 	
+	virtual ~Material() {}
+	
 };
 
+struct PatternedMaterial : public Material {
+	Color get_kd(const Vector& posO) const {
+		Vector pos = posO;
+		
+		float magic = ((int)(fabs(pos.x)+ fabs(pos.y-5) + fabs(pos.z+5)) * 3) % 2 == 0 ? 1 : .7;
+		return kd * Color(magic,magic,magic);
+	}
+};
+
+
+
+//kd from https://en.wikibooks.org/wiki/Blender_3D:_Noob_to_Pro/Every_Material_Known_to_Man/Gold
 const Material GOLD(Color(1,0.88,0.25), Color(), Color(0.17,0.35,1.5),Color(3.1,2.7,1.9),true,false,0);
 const Material GLASS(Color(), Color(), Color(1.5,1.5,1.5),Color(0,0,0),true,true,0);
 const Material SIMPLE(Color(0,.5,0), Color(0,0,0), Color(),Color(),false,false,0);
