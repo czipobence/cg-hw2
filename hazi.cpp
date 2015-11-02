@@ -427,8 +427,26 @@ struct QuadricShape : public Object {
 };
 
 struct Paraboloid : public QuadricShape {
-	Vector p;
-	Plain sf;
+	Vector f;
+	Vector r;
+	Vector n;
+	
+	Paraboloid(Vector _p, Vector _r, Vector _n, const Material* m) : QuadricShape(m), f(_p), r(_r), n(_n) {
+		float K = r*n;
+		
+		A = 1 - n.x * n.x; 
+		B = 1 - n.y * n.y;
+		C = 1 - n.z * n.z;
+		D = -2 * n.x * n.y;
+		E = -2 * n.x * n.z;
+		F = -2 * n.y * n.z;
+		G = -2 * f.x + 2 * n.x * K;
+		H = -2 * f.y + 2 * n.y * K;
+		I = -2 * f.z + 2 * n.z * K;
+		J = f * f - K * K;
+	
+	}
+	
 };
 
 struct Ellipsoid : public QuadricShape {
@@ -574,7 +592,6 @@ struct World {
 		room.addObject( new Plain(new Material(Color(.9,.9,.9)),Vector(10,5,0),Vector(0,-1,0)));
 		room.addObject( new Plain(new Material(Color(.5,0,0)),Vector(10,-5,0),Vector(0,1,0)));
 		room.addObject( new Plain(&SIMPLE,Vector(0,0,0),Vector(1,0,0)));
-		QuadricShape* qs = new QuadricShape(&GOLD);
 		QuadricShape* qs2 = new QuadricShape(&GLASS);
 		
 		qs2 -> A = 2;
@@ -588,31 +605,8 @@ struct World {
 		qs2 -> I = 0;
 		qs2 -> J = 160;
 		
-		
-		qs -> A = 1;
-		qs -> B = 1;
-		qs -> C = 0;
-		qs -> D = 0;
-		qs -> E = 0;
-		qs -> F = 0;
-		qs -> G = -10;
-		qs -> H = 0;
-		qs -> I = -10;
-		qs -> J = 50;
-		
-		/*qs -> A = 0;
-		qs -> B = 0;
-		qs -> C = 0;
-		qs -> D = 0;
-		qs -> E = 0;
-		qs -> F = 0;
-		qs -> G = 0;
-		qs -> H = 0;
-		qs -> I = 1;
-		qs -> J = -5;*/
-		
-		room.addObject(qs);
 		room.addObject(qs2);
+		room.addObject(new Paraboloid(Vector(5,0,5), Vector(5,0,0) ,Vector(0,0,1), &GOLD));
 		
 		room.addLight( new PointLight(Vector(2,3,-2), Vector(), Color(1,1,1), 40));	
 		
