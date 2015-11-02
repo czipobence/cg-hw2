@@ -67,7 +67,7 @@ const float STEP_EPSILON = 0.1;
 const float C = 1.0;
 const int MAX_DEPTH = 5;
 const float T_MAX = 1000;
-int CALC_TIME = 0;
+long GLOBAL_TIME = 0;
 
 //--------------------------------------------------------
 // 3D Vektor
@@ -259,8 +259,8 @@ struct Material {
 	Color shade(const Ray & ray, const Intersection& inter, Light* light) const {
 		Vector normal = inter.n;
 		Vector view = (ray.dir * -1).norm();
-		Vector lDir = (light->getPos(CALC_TIME) - inter.pos).norm();
-		Color lumIn = light -> getLumAt(inter.pos,CALC_TIME);
+		Vector lDir = (light->getPos(GLOBAL_TIME) - inter.pos).norm();
+		Color lumIn = light -> getLumAt(inter.pos,GLOBAL_TIME);
 		
 		Color lumOut = Color();
 		float cosTheta = normal * lDir;
@@ -500,7 +500,7 @@ struct Room {
 		
 		
 		for (int i = 0; i< lightNumber; i++) {
-			Intersection lightHit = getFirstInter(Ray(hit.pos + hit.n*STEP_EPSILON, lights[i]->getPos(CALC_TIME) - hit.pos));
+			Intersection lightHit = getFirstInter(Ray(hit.pos + hit.n*STEP_EPSILON, lights[i]->getPos(GLOBAL_TIME) - hit.pos));
 			if (lightHit.t <= 0 || lightHit.t > (lights[i]->pos - hit.pos).Length()) 
 				outRadiance = outRadiance + hit.material->shade(ray,hit,lights[i]);
 		}
@@ -585,13 +585,15 @@ struct World {
 		//screen = Screen();
 		//room = Room();
 	
-		room.addObject( new Plain(&SIMPLE,Vector(10,0,0),Vector(-1,0,0)));
+		room.addObject( new Plain(new Material(Color(.9,.9,.9)),Vector(10,0,0),Vector(-1,0,0)));
 		//room.addObject( new Plain(&GLASS,Vector(10.1,0,0),Vector(1,0,0)));
-		room.addObject( new Plain(&SIMPLE2,Vector(10,0,-5),Vector(0,0,1)));
+		room.addObject( new Plain(new Material(Color(.9,.9,.9)),Vector(10,0,-5),Vector(0,0,1)));
 		//room.addObject( new Plain(&GOLD,Vector(10,0,5),Vector(0,0,-1)));
 		room.addObject( new Plain(new Material(Color(.9,.9,.9)),Vector(10,5,0),Vector(0,-1,0)));
 		room.addObject( new Plain(new Material(Color(.5,0,0)),Vector(10,-5,0),Vector(0,1,0)));
-		room.addObject( new Plain(&SIMPLE,Vector(0,0,0),Vector(1,0,0)));
+		room.addObject( new Plain(new Material(Color(.9,.9,.9)),Vector(0,0,0),Vector(1,0,0)));
+		
+		//elipsoid
 		QuadricShape* qs2 = new QuadricShape(&GLASS);
 		
 		qs2 -> A = 2;
@@ -600,10 +602,10 @@ struct World {
 		qs2 -> D = 0;
 		qs2 -> E = 0;
 		qs2 -> F = 0;
-		qs2 -> G = -36;
+		qs2 -> G = -20;
 		qs2 -> H = 0;
 		qs2 -> I = 0;
-		qs2 -> J = 160;
+		qs2 -> J = 48;
 		
 		room.addObject(qs2);
 		room.addObject(new Paraboloid(Vector(5,0,5), Vector(5,0,0) ,Vector(0,0,1), &GOLD));
@@ -652,7 +654,7 @@ void onDisplay( ) {
 // Billentyuzet esemenyeket lekezelo fuggveny (lenyomas)
 void onKeyboard(unsigned char key, int x, int y) {
     if (key == ' ') {
-		//long time = glutGet(GLUT_ELAPSED_TIME);
+		GLOBAL_TIME = glutGet(GLUT_ELAPSED_TIME);
 		//CALCULATE_IMAGE
 		//calculateImage(time)
 		glutPostRedisplay( );
