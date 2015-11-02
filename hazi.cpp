@@ -172,6 +172,35 @@ struct Matrix_4_4{
 		return tmp;
 	}
 	
+	static Matrix_4_4 rotateX(const float alpha) {
+		Matrix_4_4 tmp = eye();
+		tmp.matr[1][1] = cos(alpha);
+		tmp.matr[1][2] = sin(alpha);
+		tmp.matr[2][1] = -1 * sin(alpha);
+		tmp.matr[2][2] = cos(alpha);
+		
+		return tmp;
+	}
+	
+	static Matrix_4_4 rotateY(const float alpha) {
+		Matrix_4_4 tmp = eye();
+		tmp.matr[0][0] = cos(alpha);
+		tmp.matr[0][2] = -1 * sin(alpha);
+		tmp.matr[2][0] = sin(alpha);
+		tmp.matr[2][2] = cos(alpha);
+		
+		return tmp;
+	}
+	
+	static Matrix_4_4 rotateZ(const float alpha) {
+		Matrix_4_4 tmp = eye();
+		tmp.matr[0][0] = cos(alpha);
+		tmp.matr[0][1] = sin(alpha);
+		tmp.matr[1][0] = -1 * sin(alpha);
+		tmp.matr[1][1] = cos(alpha);
+		
+		return tmp;
+	}
 	
 	static Matrix_4_4 eye() {
 		Matrix_4_4 tmp;
@@ -577,6 +606,16 @@ struct Ellipsoid : public QuadricShape {
 		}
 	
 		Matrix_4_4 trans = Matrix_4_4::scale(sc);
+			
+		matr = trans.T() * matr * trans;
+		
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < 4; j++)
+				std::cout << matr.matr[i][j] << ", ";
+			std::cout << std::endl;
+		}
+	
+		trans = Matrix_4_4::rotateZ(1);
 			
 		matr = trans.T() * matr * trans;
 		
