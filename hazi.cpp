@@ -143,9 +143,8 @@ struct Matrix_4_4{
 		for (int i= 0; i < 4; i++) {
 			for (int j = 0; j < 4; j++) {
 				ma[i][j] = 0;
-				for (int k = 0; k<4;k++) {
+				for (int k = 0; k<4;k++)
 					ma[i][j] += matr[i][k] * m.matr[k][j];
-				}
 			}
 		}
 		
@@ -154,28 +153,20 @@ struct Matrix_4_4{
 	}
 	
 	static Matrix_4_4 scale(Vector sc) {
-		Matrix_4_4 tmp;
-
+		Matrix_4_4 tmp = eye();
 		tmp.matr[0][0] = 1.0 / sc.x;
 		tmp.matr[1][1] = 1.0 / sc.y;
 		tmp.matr[2][2] = 1.0 / sc.z;
-		tmp.matr[3][3] = 1;
-		
-
 		return tmp;
 	}
 	
 	
 	static Matrix_4_4 translate(Vector trans) {
-		Matrix_4_4 tmp;
+		Matrix_4_4 tmp = eye();
 
-		tmp.matr[0][0] = 1;
-		tmp.matr[1][1] = 1;
-		tmp.matr[2][2] = 1;
 		tmp.matr[0][3] = -1 * trans.x;
 		tmp.matr[1][3] = -1 * trans.y;
 		tmp.matr[1][3] = -1 * trans.z;
-		tmp.matr[3][3] = 1;
 		
 
 		return tmp;
