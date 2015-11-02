@@ -153,6 +153,16 @@ struct Matrix_4_4{
 		
 	}
 	
+	Matrix_4_4 T () {
+		float ma[4][4];
+		
+		for (int i= 0; i < 4; i++) {
+			for (int j = 0; j < 4; j++) {
+				ma[i][j] = matr[j][i];
+			}
+		}
+		return Matrix_4_4(ma);
+	}
 	
 };
  
@@ -533,17 +543,26 @@ struct Ellipsoid : public QuadricShape {
 		params[6] = -2 * pos.x * params[0];
 		params[7] = -2 * pos.y * params[1];
 		params[8] = -2 * pos.z * params[2];
-		params[9] = pos.x * pos.x * params[0] + pos.y * pos.y * params[1] + pos.z * pos.z * params[2] - params[0] * sc.x * sc.x;
+		params[9] = pos.x * pos.x * params[0] + pos.y * pos.y * params[1] + pos.z * pos.z * params[2]; //- params[0] * sc.x * sc.x;
 		
 		
 		Matrix_4_4 matr = Matrix_4_4(params);
 		float ft[4][4];
 		
+		
 		for (int i = 0; i < 4; i++)
-			for (int j = 0; j < 4; j++)
-				ft[i][j] = i+j;
+			for (int j = 0; j < 4; j++) {
+				ft[i][j] = i ==j ? 1.0/(i+1) :0;
+		}
+		
+		ft[2][2] = 0.2;
+		ft[3][3] = 1;
 				
-		Matrix_4_4 res = matr * Matrix_4_4(ft);
+		Matrix_4_4 trans = Matrix_4_4(ft);
+			
+		Matrix_4_4 res = trans.T() * matr * trans;
+				
+		//res = matr * trans;
 		
 		for (int i = 0; i < 4; i++) {
 			for (int j = 0; j < 4; j++)
@@ -551,13 +570,34 @@ struct Ellipsoid : public QuadricShape {
 			std::cout << std::endl;
 		}
 		
+		
+		
 		for (int i = 0; i < 4; i++) {
 			for (int j = 0; j < 4; j++)
 				std::cout << res.matr[i][j] << ", ";
 			std::cout << std::endl;
 		}
 		
-		setParams(matr);
+		for (int i = 0; i < 4; i++)
+			for (int j = 0; j < 4; j++) {
+				ft[i][j] = i ==j ? 1 :0;
+			}
+		ft[0][3] = -6;
+		ft[1][3] = 0;
+		ft[2][3] = 0;
+		
+		trans = Matrix_4_4(ft);
+			
+		res = trans.T() * res * trans;
+		
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < 4; j++)
+				std::cout << res.matr[i][j] << ", ";
+			std::cout << std::endl;
+		}
+		res.matr[3][3] -= 1;
+		
+		setParams(res);
 		
 	}
 	
@@ -697,13 +737,13 @@ struct World {
 		room.addObject( new Plane(new Material(Color(.9,.9,.9)),Vector(10,0,0),Vector(-1,0,0)));
 		//room.addObject( new Plane(&GLASS,Vector(10.1,0,0),Vector(1,0,0)));
 		room.addObject( new Plane(new Material(Color(.9,.9,.9)),Vector(10,0,-5),Vector(0,0,1)));
-		//room.addObject( new Plane(&GOLD,Vector(10,0,5),Vector(0,0,-1)));
+		room.addObject( new Plane(&GOLD,Vector(10,0,5),Vector(0,0,-1)));
 		room.addObject( new Plane(new Material(Color(.9,.9,.9)),Vector(10,5,0),Vector(0,-1,0)));
 		room.addObject( new Plane(new Material(Color(.5,0,0)),Vector(10,-5,0),Vector(0,1,0)));
 		room.addObject( new Plane(new Material(Color(.9,.9,.9)),Vector(0,0,0),Vector(1,0,0)));
 		
-		room.addObject(new Ellipsoid(Vector(5,0,0), Vector(1,1,1), &GLASS));
-		room.addObject(new Paraboloid(Vector(5,0,5), Vector(5,0,0) ,Vector(0,0,1), &GOLD));
+		room.addObject(new Ellipsoid(Vector(0,0,0), Vector(1,1,1), &GLASS));
+		//room.addObject(new Paraboloid(Vector(5,0,5), Vector(5,0,0) ,Vector(0,0,1), &GOLD));
 		
 		room.addLight( new PointLight(Vector(2,3,-2), Vector(), Color(1,1,1), 40));	
 		
@@ -722,8 +762,8 @@ struct World {
 
 World world;
 
-Vector camPos = Vector(.1,0,0);
-Vector camFwd = Vector(1,0,1);
+Vector camPos = Vector(.1,0,4.95);
+Vector camFwd = Vector(1,0,0);
 Vector camUp = Vector(0,1,0);
 
 // Inicializacio, a program futasanak kezdeten, az OpenGL kontextus letrehozasa utan hivodik meg (ld. main() fv.)
