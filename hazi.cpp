@@ -64,7 +64,7 @@
 
 const float EPSILON = 0.001;
 const float STEP_EPSILON = 0.1;
-const float C = 1.0;
+const float L_SP = 1.0;
 const int MAX_DEPTH = 5;
 const float T_MAX = 1000;
 long GLOBAL_TIME = 0;
@@ -107,6 +107,30 @@ struct Vector {
    float Dist(Vector v) const { return (*this - v).Length(); }
    Vector norm() const {return *this * (1 / this->Length()); }
    
+};
+
+struct Matrix_4_4{
+	float matr[4][4];
+	
+	Matrix_4_4() {
+		for (int i = 0; i < 4; i++)
+			for (int j = 0; j < 4; j++)
+				matr[i][j] = 0;
+	}
+	
+	Matrix_4_4 (float f[10]) {
+		matr[0][0] = f[0];
+		matr[1][1] = f[1];
+		matr[2][2] = f[2];
+		matr[0][1] = matr[1][0] =  f[3] / 2.0;
+		matr[0][2] = matr[2][0] =  f[4] / 2.0;
+		matr[0][3] = matr[3][0] =  f[6] / 2.0;
+		matr[1][2] = matr[2][1] =  f[5] / 2.0;
+		matr[1][3] = matr[3][1] =  f[7] / 2.0;
+		matr[2][3] = matr[3][2] =  f[8] / 2.0;
+		matr[3][3] = f[9];
+	}
+	
 };
  
 //--------------------------------------------------------
@@ -450,7 +474,19 @@ struct Paraboloid : public QuadricShape {
 };
 
 struct Ellipsoid : public QuadricShape {
-	float ax_a, ax_b, ax_c;
+	
+	Ellipsoid(Material *m, Vector pos, Vector sc): QuadricShape(m) {
+		float params[10] = {0,0,0,0,0,0,0,0,0,0};
+		
+		params[0] = sc.y * sc.y * sc.z*sc.z; 
+		params[1] = sc.x * sc.x * sc.z*sc.z;
+		params[2] = sc.y * sc.y * sc.x*sc.x;
+		params[6] = -2 * pos.x * params[0];
+		params[7] = -2 * pos.y * params[1];
+		params[8] = -2 * pos.z * params[2];
+		params[9] = pos.x * pos.x * params[0] + pos.y * pos.y * params[1] + pos.z * pos.z * params[2] - params[0] * sc.x * sc.x;
+		
+	}
 	
 };
 
@@ -601,7 +637,7 @@ struct World {
 		qs2 -> C = 1;
 		qs2 -> D = 0;
 		qs2 -> E = 0;
-		qs2 -> F = 0;
+		qs2 -> F = 1;
 		qs2 -> G = -20;
 		qs2 -> H = 0;
 		qs2 -> I = 0;
