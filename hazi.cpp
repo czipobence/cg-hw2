@@ -358,7 +358,7 @@ struct Plain : public Object {
 	}
 };
 
-struct QuadraticShape : public Object {
+struct QuadricShape : public Object {
 		float A,B,C,D,E,F,G,H,I,J;
 		
 		Vector getNormalAt(Vector inter, Vector dir) {
@@ -420,18 +420,18 @@ struct QuadraticShape : public Object {
 			
 		}
 		
-		QuadraticShape(const Material * m) : Object(m) {}
-		QuadraticShape() : Object(&GLASS) {}
-		virtual ~QuadraticShape() {}
+		QuadricShape(const Material * m) : Object(m) {}
+		QuadricShape() : Object(&GLASS) {}
+		virtual ~QuadricShape() {}
 		
 };
 
-struct Paraboloid : public QuadraticShape {
+struct Paraboloid : public QuadricShape {
 	Vector p;
 	Plain sf;
 };
 
-struct Ellipsoid : public QuadraticShape {
+struct Ellipsoid : public QuadricShape {
 	float ax_a, ax_b, ax_c;
 	
 };
@@ -574,8 +574,8 @@ struct World {
 		room.addObject( new Plain(new Material(Color(.9,.9,.9)),Vector(10,5,0),Vector(0,-1,0)));
 		room.addObject( new Plain(new Material(Color(.5,0,0)),Vector(10,-5,0),Vector(0,1,0)));
 		room.addObject( new Plain(&SIMPLE,Vector(0,0,0),Vector(1,0,0)));
-		QuadraticShape* qs = new QuadraticShape(&GOLD);
-		QuadraticShape* qs2 = new QuadraticShape(&GLASS);
+		QuadricShape* qs = new QuadricShape(&GOLD);
+		QuadricShape* qs2 = new QuadricShape(&GLASS);
 		
 		qs2 -> A = 2;
 		qs2 -> B = 2;
