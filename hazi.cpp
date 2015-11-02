@@ -444,6 +444,32 @@ struct QuadricShape : public Object {
 			
 		}
 		
+		void setParams(float params[10]) {
+			A = params[0];
+			B = params[1];
+			C = params[2];
+			D = params[3];
+			E = params[4];
+			F = params[5];
+			G = params[6];
+			H = params[7];
+			I = params[8];
+			J = params[9];
+		}
+		
+		void setParams(Matrix_4_4 m) {
+			A = m.matr[0][0];
+			B = m.matr[1][1];
+			C = m.matr[2][2];
+			D = m.matr[0][1] * 2.0;
+			E = m.matr[0][2] * 2.0;
+			F = m.matr[1][2] * 2.0;
+			G = m.matr[0][3] * 2.0;
+			H = m.matr[1][3] * 2.0;
+			I = m.matr[2][3] * 2.0;
+			J = m.matr[3][3];	
+		}
+		
 		QuadricShape(const Material * m) : Object(m) {}
 		QuadricShape() : Object(&GLASS) {}
 		virtual ~QuadricShape() {}
@@ -475,7 +501,7 @@ struct Paraboloid : public QuadricShape {
 
 struct Ellipsoid : public QuadricShape {
 	
-	Ellipsoid(Material *m, Vector pos, Vector sc): QuadricShape(m) {
+	Ellipsoid(const Vector& pos, const Vector& sc, const Material *m): QuadricShape(m) {
 		float params[10] = {0,0,0,0,0,0,0,0,0,0};
 		
 		params[0] = sc.y * sc.y * sc.z*sc.z; 
@@ -485,6 +511,8 @@ struct Ellipsoid : public QuadricShape {
 		params[7] = -2 * pos.y * params[1];
 		params[8] = -2 * pos.z * params[2];
 		params[9] = pos.x * pos.x * params[0] + pos.y * pos.y * params[1] + pos.z * pos.z * params[2] - params[0] * sc.x * sc.x;
+		
+		setParams(params);
 		
 	}
 	
@@ -629,21 +657,7 @@ struct World {
 		room.addObject( new Plane(new Material(Color(.5,0,0)),Vector(10,-5,0),Vector(0,1,0)));
 		room.addObject( new Plane(new Material(Color(.9,.9,.9)),Vector(0,0,0),Vector(1,0,0)));
 		
-		//elipsoid
-		QuadricShape* qs2 = new QuadricShape(&GLASS);
-		
-		qs2 -> A = 2;
-		qs2 -> B = 2;
-		qs2 -> C = 1;
-		qs2 -> D = 0;
-		qs2 -> E = 0;
-		qs2 -> F = 1;
-		qs2 -> G = -20;
-		qs2 -> H = 0;
-		qs2 -> I = 0;
-		qs2 -> J = 48;
-		
-		room.addObject(qs2);
+		room.addObject(new Ellipsoid(Vector(5,0,0), Vector(1,.3,.7), &GLASS));
 		room.addObject(new Paraboloid(Vector(5,0,5), Vector(5,0,0) ,Vector(0,0,1), &GOLD));
 		
 		room.addLight( new PointLight(Vector(2,3,-2), Vector(), Color(1,1,1), 40));	
