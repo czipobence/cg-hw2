@@ -345,10 +345,10 @@ struct Object {
 	virtual ~Object () {}
 };
 
-struct Plain : public Object {
+struct Plane : public Object {
 	Vector p,n;
 	
-	Plain(const Material* m ,Vector _p, Vector _n) :Object(m), p(_p), n(_n.norm()) {}
+	Plane(const Material* m ,Vector _p, Vector _n) :Object(m), p(_p), n(_n.norm()) {}
 	
 	Intersection intersect(const Ray& ray) {
 		if (fabs(ray.dir * n) < EPSILON) return Intersection();
@@ -585,13 +585,13 @@ struct World {
 		//screen = Screen();
 		//room = Room();
 	
-		room.addObject( new Plain(new Material(Color(.9,.9,.9)),Vector(10,0,0),Vector(-1,0,0)));
-		//room.addObject( new Plain(&GLASS,Vector(10.1,0,0),Vector(1,0,0)));
-		room.addObject( new Plain(new Material(Color(.9,.9,.9)),Vector(10,0,-5),Vector(0,0,1)));
-		//room.addObject( new Plain(&GOLD,Vector(10,0,5),Vector(0,0,-1)));
-		room.addObject( new Plain(new Material(Color(.9,.9,.9)),Vector(10,5,0),Vector(0,-1,0)));
-		room.addObject( new Plain(new Material(Color(.5,0,0)),Vector(10,-5,0),Vector(0,1,0)));
-		room.addObject( new Plain(new Material(Color(.9,.9,.9)),Vector(0,0,0),Vector(1,0,0)));
+		room.addObject( new Plane(new Material(Color(.9,.9,.9)),Vector(10,0,0),Vector(-1,0,0)));
+		//room.addObject( new Plane(&GLASS,Vector(10.1,0,0),Vector(1,0,0)));
+		room.addObject( new Plane(new Material(Color(.9,.9,.9)),Vector(10,0,-5),Vector(0,0,1)));
+		//room.addObject( new Plane(&GOLD,Vector(10,0,5),Vector(0,0,-1)));
+		room.addObject( new Plane(new Material(Color(.9,.9,.9)),Vector(10,5,0),Vector(0,-1,0)));
+		room.addObject( new Plane(new Material(Color(.5,0,0)),Vector(10,-5,0),Vector(0,1,0)));
+		room.addObject( new Plane(new Material(Color(.9,.9,.9)),Vector(0,0,0),Vector(1,0,0)));
 		
 		//elipsoid
 		QuadricShape* qs2 = new QuadricShape(&GLASS);
