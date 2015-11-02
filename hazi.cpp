@@ -512,7 +512,11 @@ struct Ellipsoid : public QuadricShape {
 		params[8] = -2 * pos.z * params[2];
 		params[9] = pos.x * pos.x * params[0] + pos.y * pos.y * params[1] + pos.z * pos.z * params[2] - params[0] * sc.x * sc.x;
 		
-		setParams(params);
+		
+		Matrix_4_4 matr = Matrix_4_4(params);
+		
+		
+		setParams(matr);
 		
 	}
 	
