@@ -124,7 +124,7 @@ struct Matrix_4_4{
 				matr[i][j] = ma[i][j];
 	} 
 	
-	Matrix_4_4 (float f[]) {
+	/*Matrix_4_4 (float f[]) {
 		matr[0][0] = f[0];
 		matr[1][1] = f[1];
 		matr[2][2] = f[2];
@@ -135,7 +135,7 @@ struct Matrix_4_4{
 		matr[1][3] = matr[3][1] =  f[7] / 2.0;
 		matr[2][3] = matr[3][2] =  f[8] / 2.0;
 		matr[3][3] = f[9];
-	}
+	}*/
 	
 	Matrix_4_4 operator *(const Matrix_4_4 & m) const {
 		float ma[4][4];
@@ -153,12 +153,12 @@ struct Matrix_4_4{
 		
 	}
 	
-	Matrix_4_4 scale(Vector sc) {
+	static Matrix_4_4 scale(Vector sc) {
 		Matrix_4_4 tmp;
 
-		tmp.matr[0][0] = sc.x;
-		tmp.matr[1][1] = sc.y;
-		tmp.matr[2][2] = sc.z;
+		tmp.matr[0][0] = 1.0 / sc.x;
+		tmp.matr[1][1] = 1.0 / sc.y;
+		tmp.matr[2][2] = 1.0 / sc.z;
 		tmp.matr[3][3] = 1;
 		
 
@@ -166,15 +166,27 @@ struct Matrix_4_4{
 	}
 	
 	
-	Matrix_4_4 translate(Vector trans) {
+	static Matrix_4_4 translate(Vector trans) {
 		Matrix_4_4 tmp;
 
 		tmp.matr[0][0] = 1;
 		tmp.matr[1][1] = 1;
 		tmp.matr[2][2] = 1;
-		tmp.matr[0][3] = trans.x;
-		tmp.matr[1][3] = trans.y;
-		tmp.matr[1][3] = trans.z;
+		tmp.matr[0][3] = -1 * trans.x;
+		tmp.matr[1][3] = -1 * trans.y;
+		tmp.matr[1][3] = -1 * trans.z;
+		tmp.matr[3][3] = 1;
+		
+
+		return tmp;
+	}
+	
+	static Matrix_4_4 eye() {
+		Matrix_4_4 tmp;
+
+		tmp.matr[0][0] = 1;
+		tmp.matr[1][1] = 1;
+		tmp.matr[2][2] = 1;
 		tmp.matr[3][3] = 1;
 		
 
@@ -563,34 +575,18 @@ struct Paraboloid : public QuadricShape {
 struct Ellipsoid : public QuadricShape {
 	
 	Ellipsoid(const Vector& pos, const Vector& sc, const Material *m): QuadricShape(m) {
-		float params[10] = {0,0,0,0,0,0,0,0,0,0};
-		
-		params[0] = sc.y * sc.y * sc.z*sc.z; 
-		params[1] = sc.x * sc.x * sc.z*sc.z;
-		params[2] = sc.y * sc.y * sc.x*sc.x;
-		params[6] = -2 * pos.x * params[0];
-		params[7] = -2 * pos.y * params[1];
-		params[8] = -2 * pos.z * params[2];
-		params[9] = pos.x * pos.x * params[0] + pos.y * pos.y * params[1] + pos.z * pos.z * params[2]; //- params[0] * sc.x * sc.x;
-		
-		
-		Matrix_4_4 matr = Matrix_4_4(params);
-		float ft[4][4];
-		
-		
-		for (int i = 0; i < 4; i++)
-			for (int j = 0; j < 4; j++) {
-				ft[i][j] = i ==j ? 1.0/(i+1) :0;
+		Matrix_4_4 matr = Matrix_4_4::eye();
+		matr.matr[3][3] = 0;
+	
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < 4; j++)
+				std::cout << matr.matr[i][j] << ", ";
+			std::cout << std::endl;
 		}
-		
-		ft[2][2] = 0.5;
-		ft[3][3] = 1;
-				
-		Matrix_4_4 trans = Matrix_4_4(ft);
+	
+		Matrix_4_4 trans = Matrix_4_4::scale(sc);
 			
-		Matrix_4_4 res = trans.T() * matr * trans;
-				
-		//res = matr * trans;
+		matr = trans.T() * matr * trans;
 		
 		for (int i = 0; i < 4; i++) {
 			for (int j = 0; j < 4; j++)
@@ -598,34 +594,18 @@ struct Ellipsoid : public QuadricShape {
 			std::cout << std::endl;
 		}
 		
-		
-		
-		for (int i = 0; i < 4; i++) {
-			for (int j = 0; j < 4; j++)
-				std::cout << res.matr[i][j] << ", ";
-			std::cout << std::endl;
-		}
-		
-		for (int i = 0; i < 4; i++)
-			for (int j = 0; j < 4; j++) {
-				ft[i][j] = i ==j ? 1 :0;
-			}
-		ft[0][3] = -6;
-		ft[1][3] = 0;
-		ft[2][3] = 0;
-		
-		trans = Matrix_4_4(ft);
-			
-		res = (trans.T() * res) * trans;
+		trans = Matrix_4_4::translate(pos);
+	
+		matr = (trans.T() * matr) * trans;
 		
 		for (int i = 0; i < 4; i++) {
 			for (int j = 0; j < 4; j++)
-				std::cout << res.matr[i][j] << ", ";
+				std::cout << matr.matr[i][j] << ", ";
 			std::cout << std::endl;
 		}
-		res.matr[3][3] -= 1;
+		matr.matr[3][3] -= 1;
 		
-		setParams(res);
+		setParams(matr);
 		
 	}
 	
@@ -770,7 +750,7 @@ struct World {
 		room.addObject( new Plane(new Material(Color(.5,0,0)),Vector(10,-5,0),Vector(0,1,0)));
 		room.addObject( new Plane(new Material(Color(.9,.9,.9)),Vector(0,0,0),Vector(1,0,0)));
 		
-		room.addObject(new Ellipsoid(Vector(0,0,0), Vector(1,1,1), &GLASS));
+		room.addObject(new Ellipsoid(Vector(6,0,0), Vector(1,2,3), &GLASS));
 		room.addObject(new Paraboloid(Vector(5,0,5), Vector(5,0,0) ,Vector(0,0,1), &GOLD));
 		
 		room.addLight( new PointLight(Vector(2,3,-2), Vector(), Color(1,1,1), 40));	
