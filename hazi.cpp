@@ -152,7 +152,7 @@ struct Matrix_4_4{
 		
 	}
 	
-	static Matrix_4_4 scale(Vector sc) {
+	static Matrix_4_4 scale(const Vector& sc) {
 		Matrix_4_4 tmp = eye();
 		tmp.matr[0][0] = 1.0 / sc.x;
 		tmp.matr[1][1] = 1.0 / sc.y;
@@ -161,7 +161,7 @@ struct Matrix_4_4{
 	}
 	
 	
-	static Matrix_4_4 translate(Vector trans) {
+	static Matrix_4_4 translate(const Vector& trans) {
 		Matrix_4_4 tmp = eye();
 
 		tmp.matr[0][3] = -1 * trans.x;
@@ -171,6 +171,7 @@ struct Matrix_4_4{
 
 		return tmp;
 	}
+	
 	
 	static Matrix_4_4 eye() {
 		Matrix_4_4 tmp;
