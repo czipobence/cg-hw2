@@ -118,7 +118,13 @@ struct Matrix_4_4{
 				matr[i][j] = 0;
 	}
 	
-	Matrix_4_4 (float f[10]) {
+	Matrix_4_4(float ma[4][4]) {
+		for (int i = 0; i < 4; i++)
+			for (int j = 0; j < 4; j++)
+				matr[i][j] = ma[i][j];
+	} 
+	
+	Matrix_4_4 (float f[]) {
 		matr[0][0] = f[0];
 		matr[1][1] = f[1];
 		matr[2][2] = f[2];
@@ -130,6 +136,23 @@ struct Matrix_4_4{
 		matr[2][3] = matr[3][2] =  f[8] / 2.0;
 		matr[3][3] = f[9];
 	}
+	
+	Matrix_4_4 operator *(const Matrix_4_4 & m) const {
+		float ma[4][4];
+		
+		for (int i= 0; i < 4; i++) {
+			for (int j = 0; j < 4; j++) {
+				ma[i][j] = 0;
+				for (int k = 0; k<4;k++) {
+					ma[i][j] += matr[i][k] * m.matr[k][j];
+				}
+			}
+		}
+		
+		return Matrix_4_4(ma);
+		
+	}
+	
 	
 };
  
@@ -514,7 +537,25 @@ struct Ellipsoid : public QuadricShape {
 		
 		
 		Matrix_4_4 matr = Matrix_4_4(params);
+		float ft[4][4];
 		
+		for (int i = 0; i < 4; i++)
+			for (int j = 0; j < 4; j++)
+				ft[i][j] = i+j;
+				
+		Matrix_4_4 res = matr * Matrix_4_4(ft);
+		
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < 4; j++)
+				std::cout << matr.matr[i][j] << ", ";
+			std::cout << std::endl;
+		}
+		
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < 4; j++)
+				std::cout << res.matr[i][j] << ", ";
+			std::cout << std::endl;
+		}
 		
 		setParams(matr);
 		
@@ -661,7 +702,7 @@ struct World {
 		room.addObject( new Plane(new Material(Color(.5,0,0)),Vector(10,-5,0),Vector(0,1,0)));
 		room.addObject( new Plane(new Material(Color(.9,.9,.9)),Vector(0,0,0),Vector(1,0,0)));
 		
-		room.addObject(new Ellipsoid(Vector(5,0,0), Vector(1,.3,.7), &GLASS));
+		room.addObject(new Ellipsoid(Vector(5,0,0), Vector(1,1,1), &GLASS));
 		room.addObject(new Paraboloid(Vector(5,0,5), Vector(5,0,0) ,Vector(0,0,1), &GOLD));
 		
 		room.addLight( new PointLight(Vector(2,3,-2), Vector(), Color(1,1,1), 40));	
