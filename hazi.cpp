@@ -153,6 +153,34 @@ struct Matrix_4_4{
 		
 	}
 	
+	Matrix_4_4 scale(Vector sc) {
+		Matrix_4_4 tmp;
+
+		tmp.matr[0][0] = sc.x;
+		tmp.matr[1][1] = sc.y;
+		tmp.matr[2][2] = sc.z;
+		tmp.matr[3][3] = 1;
+		
+
+		return tmp;
+	}
+	
+	
+	Matrix_4_4 translate(Vector trans) {
+		Matrix_4_4 tmp;
+
+		tmp.matr[0][0] = 1;
+		tmp.matr[1][1] = 1;
+		tmp.matr[2][2] = 1;
+		tmp.matr[0][3] = trans.x;
+		tmp.matr[1][3] = trans.y;
+		tmp.matr[1][3] = trans.z;
+		tmp.matr[3][3] = 1;
+		
+
+		return tmp;
+	}
+	
 	Matrix_4_4 T () {
 		float ma[4][4];
 		
@@ -555,7 +583,7 @@ struct Ellipsoid : public QuadricShape {
 				ft[i][j] = i ==j ? 1.0/(i+1) :0;
 		}
 		
-		ft[2][2] = 0.2;
+		ft[2][2] = 0.5;
 		ft[3][3] = 1;
 				
 		Matrix_4_4 trans = Matrix_4_4(ft);
@@ -588,7 +616,7 @@ struct Ellipsoid : public QuadricShape {
 		
 		trans = Matrix_4_4(ft);
 			
-		res = trans.T() * res * trans;
+		res = (trans.T() * res) * trans;
 		
 		for (int i = 0; i < 4; i++) {
 			for (int j = 0; j < 4; j++)
@@ -734,16 +762,16 @@ struct World {
 		//screen = Screen();
 		//room = Room();
 	
-		room.addObject( new Plane(new Material(Color(.9,.9,.9)),Vector(10,0,0),Vector(-1,0,0)));
+		room.addObject( new Plane(&SIMPLE,Vector(10,0,0),Vector(-1,0,0)));
 		//room.addObject( new Plane(&GLASS,Vector(10.1,0,0),Vector(1,0,0)));
 		room.addObject( new Plane(new Material(Color(.9,.9,.9)),Vector(10,0,-5),Vector(0,0,1)));
-		room.addObject( new Plane(&GOLD,Vector(10,0,5),Vector(0,0,-1)));
+		//room.addObject( new Plane(&GOLD,Vector(10,0,5),Vector(0,0,-1)));
 		room.addObject( new Plane(new Material(Color(.9,.9,.9)),Vector(10,5,0),Vector(0,-1,0)));
 		room.addObject( new Plane(new Material(Color(.5,0,0)),Vector(10,-5,0),Vector(0,1,0)));
 		room.addObject( new Plane(new Material(Color(.9,.9,.9)),Vector(0,0,0),Vector(1,0,0)));
 		
 		room.addObject(new Ellipsoid(Vector(0,0,0), Vector(1,1,1), &GLASS));
-		//room.addObject(new Paraboloid(Vector(5,0,5), Vector(5,0,0) ,Vector(0,0,1), &GOLD));
+		room.addObject(new Paraboloid(Vector(5,0,5), Vector(5,0,0) ,Vector(0,0,1), &GOLD));
 		
 		room.addLight( new PointLight(Vector(2,3,-2), Vector(), Color(1,1,1), 40));	
 		
@@ -762,7 +790,7 @@ struct World {
 
 World world;
 
-Vector camPos = Vector(.1,0,4.95);
+Vector camPos = Vector(.1,0,0);
 Vector camFwd = Vector(1,0,0);
 Vector camUp = Vector(0,1,0);
 
@@ -863,6 +891,12 @@ void onIdle( ) {
      		// program inditasa ota eltelt ido
 
 }
+
+/**
+ * TODO Az üveg reflektív és refraktív egyszerre? 
+ * TODO Az arany kd-jével hanyadán állunk?
+ * TODO Ellipszoid árnyékot vet-e?
+ **/
 
 // ...Idaig modosithatod
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
