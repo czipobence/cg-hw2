@@ -476,7 +476,7 @@ struct Object {
 	const Material *m;
 	Vector vel;
 	
-	Object (const Material *mat, Vector _v = Vector(0,0,0)) : m(mat), vel(_v) {}
+	Object (const Material *mat, const Vector& _v = Vector(0,0,0)) : m(mat), vel(_v) {}
 	
 	virtual Intersection intersect(const Ray& ray) = 0;
 	virtual ~Object () {}
@@ -485,7 +485,7 @@ struct Object {
 struct Plane : public Object {
 	Vector p,n;
 	
-	Plane(const Material* m ,Vector _p, Vector _n) :Object(m), p(_p), n(_n.norm()) {}
+	Plane(const Material* m , const Vector& _p, const Vector& _n, const Vector& _v = Vector()) :Object(m, _v), p(_p), n(_n.norm()) {}
 	
 	Intersection intersect(const Ray& ray) {
 		if (fabs(ray.dir * n) < EPSILON) return Intersection();
@@ -570,8 +570,7 @@ struct QuadricShape : public Object {
 			J = m.matr[3][3];	
 		}
 		
-		QuadricShape(const Material * m) : Object(m) {}
-		QuadricShape() : Object(&GLASS) {}
+		QuadricShape(const Material * m = &GLASS, const Vector& v = Vector()) : Object(m,v) {}
 		virtual ~QuadricShape() {};
 		
 };
@@ -581,7 +580,7 @@ struct Paraboloid : public QuadricShape {
 	Vector r;
 	Vector n;
 	
-	Paraboloid(const Material* m, Vector _p, Vector _r, Vector _n) : QuadricShape(m), f(_p), r(_r), n(_n) {
+	Paraboloid(const Material* m, const Vector & _p, const Vector& _r, const Vector& _n, const Vector& _v = Vector()) : QuadricShape(m,_v), f(_p), r(_r), n(_n) {
 		float K = r*n;
 		
 		A = 1 - n.x * n.x; 
@@ -601,7 +600,7 @@ struct Paraboloid : public QuadricShape {
 
 struct Ellipsoid : public QuadricShape {
 	
-	Ellipsoid(const Material *m, const Vector& pos, const Vector& sc,const Vector& rot): QuadricShape(m) {
+	Ellipsoid(const Material *m, const Vector& pos, const Vector& sc,const Vector& rot, const Vector& _v = Vector()): QuadricShape(m,_v) {
 		Matrix_4_4 matr = Matrix_4_4::eye();
 		matr.matr[3][3] = 0;
 	
