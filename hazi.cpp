@@ -321,7 +321,7 @@ struct Intersection {
 struct Ray {
 	Vector p0, dir;
 	float shootTime;
-	Ray(Vector o = Vector(), Vector d = Vector(), float shoot_t = 0.0f) : p0(o), dir(d.norm()), shootTime(shoot_t) {}
+	Ray(Vector o = Vector(), Vector d = Vector(), float shoot_t = GLOBAL_TIME) : p0(o), dir(d.norm()), shootTime(shoot_t) {}
 	Vector getVec(float t) const {
 		return p0 + dir *t * L_SP;
 	}
@@ -514,8 +514,7 @@ struct QuadricShape : public Object {
 		}
 		
 		Intersection intersect(const Ray& ray) {
-			
-			Vector r0 = ray.p0 - (vel * GLOBAL_TIME);
+			Vector r0 = ray.p0 - (vel * ray.shootTime);
 			Vector rd = (ray.dir * L_SP) + vel;
 			
 			float x0 = r0.x;
@@ -695,14 +694,11 @@ struct Room {
 			Color fres = hit.material -> fresnel(norm,vIn);
 			Vector vOut = hit.material -> reflect(norm,vIn);
 			
-			//std::cout << fres.r << " " << fres.g << " " << fres.b << std::endl;
+			float time_elapsed = ray.shootTime - hit.t;
 			
-			//std::cout << "VIN: " << vIn.x << ", " << vIn.y << ", " << vIn.z << std::endl;
-			//std::cout << "NROM: " << norm.x << ", " << norm.y << ", " << norm.z << std::endl;
-			//std::cout << "VOUT: " << vOut.x << ", " << vOut.y << ", " << vOut.z << std::endl;
+			Ray reflectedRay = Ray (hit.pos + norm*STEP_EPSILON, vOut,time_elapsed);
 			
-			Color l_in = traceRay(Ray (hit.pos + norm*STEP_EPSILON, vOut), depth +1);
-			//std::cout << l_in.r << " " << l_in.g << " " << l_in.b << std::endl;
+			Color l_in = traceRay(reflectedRay, depth +1);
 			outRadiance = outRadiance + (l_in * fres) ; 
 		}
 		if (hit.material->refractive) {
@@ -712,8 +708,10 @@ struct Room {
 			Vector nNorm = (vIn * norm > 0) ? norm * -1 : norm;
 			
 			Color fres = hit.material -> fresnel(nNorm ,vIn);
-			//std::cout << (Color(1,1,1) - fres).r << " " << outRadiance.r << std::endl;
-			outRadiance = outRadiance + traceRay(Ray (hit.pos - nNorm*STEP_EPSILON, hit.material -> refract(norm,vIn)), depth +1) * (Color(1,1,1) - fres); 
+			
+			float time_elapsed = GLOBAL_TIME - hit.t;
+			Ray refractedRay = Ray (hit.pos - nNorm*STEP_EPSILON, hit.material -> refract(norm,vIn), time_elapsed);
+			outRadiance = outRadiance + traceRay(refractedRay, depth +1) * (Color(1,1,1) - fres); 
 		}
 		return outRadiance;
 	}
