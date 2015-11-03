@@ -153,7 +153,7 @@ struct Matrix_4_4{
 
 		tmp.matr[0][3] = -1 * trans.x;
 		tmp.matr[1][3] = -1 * trans.y;
-		tmp.matr[1][3] = -1 * trans.z;
+		tmp.matr[2][3] = -1 * trans.z;
 		
 
 		return tmp;
