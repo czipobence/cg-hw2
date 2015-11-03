@@ -783,7 +783,7 @@ struct World {
 		//room.addObject( new Plane(&GLASS, Vector(5,0,0.01), Vector(0,0,-1)));
 		
 		
-		room.addObject(new Ellipsoid(&GLASS, Vector(5,0,0), Vector(.25,.25,1), Vector(1,0,.2), Vector(0,0,-0.2)));
+		room.addObject(new Ellipsoid(&GLASS, Vector(5,0,0), Vector(.25,.25,1), Vector(1,0,.2), Vector(-0.4,.4,.4)));
 		room.addObject(new Paraboloid(&GOLD, Vector(5,0,7.5), Vector(5,0,-2.5) ,Vector(0,0,1)));
 		
 		room.addLight( new PointLight(Vector(2,3,-2), Vector(0,0,0), Color(1,1,1), 20));	
@@ -803,8 +803,8 @@ struct World {
 
 World world;
 
-Vector camPos = Vector(.1,0,0);
-Vector camFwd = Vector(1,0,0);
+Vector camPos = Vector(.5,-4.5,-4.5);
+Vector camFwd = Vector(1,1,1);
 Vector camUp = Vector(0,1,0);
 
 // Inicializacio, a program futasanak kezdeten, az OpenGL kontextus letrehozasa utan hivodik meg (ld. main() fv.)
