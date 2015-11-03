@@ -582,7 +582,7 @@ struct Paraboloid : public QuadricShape {
 	Vector r;
 	Vector n;
 	
-	Paraboloid(Vector _p, Vector _r, Vector _n, const Material* m) : QuadricShape(m), f(_p), r(_r), n(_n) {
+	Paraboloid(const Material* m, Vector _p, Vector _r, Vector _n) : QuadricShape(m), f(_p), r(_r), n(_n) {
 		float K = r*n;
 		
 		A = 1 - n.x * n.x; 
@@ -810,9 +810,9 @@ struct World {
 		
 		
 		room.addObject(new Ellipsoid(&GLASS, Vector(6,0,0), Vector(.25,1,.5), Vector(1,1,.5)));
-		room.addObject(new Paraboloid(Vector(5,0,5), Vector(5,0,0) ,Vector(0,0,1), &GOLD));
+		room.addObject(new Paraboloid(&GOLD, Vector(5,0,7.5), Vector(5,0,-2.5) ,Vector(0,0,1)));
 		
-		room.addLight( new PointLight(Vector(2,3,-2), Vector(.3,-0.3,.3), Color(1,1,1), 20));	
+		room.addLight( new PointLight(Vector(2,3,-2), Vector(1,-0.67,.67), Color(1,1,1), 20));	
 		
 	}
 	
