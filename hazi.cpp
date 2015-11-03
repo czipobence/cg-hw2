@@ -252,8 +252,11 @@ struct LightInfo {
 	Vector dir;
 	float time;
 	Color rad;
+	bool valid;
 	
-	LightInfo(Vector _dir, float _t, Color _r): dir(_dir), time(_t), rad(_r) {}
+	LightInfo() : valid(false) {}
+	
+	LightInfo(Vector _dir, float _t, Color _r): dir(_dir), time(_t), rad(_r), valid(true) {}
 	
 };
 
@@ -281,6 +284,10 @@ struct PointLight: public Light {
 	}
 	
 	LightInfo getInfo(Vector intPos) {
+		Vector d = getPos(GLOBAL_TIME) - intPos;
+		
+		//float disc = 
+		
 		return LightInfo((getPos(GLOBAL_TIME) - intPos).norm(), (getPos(GLOBAL_TIME) - intPos).Length()/L_SP, getLumAt(intPos,GLOBAL_TIME));
 	}
 	
