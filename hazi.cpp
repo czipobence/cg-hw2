@@ -474,10 +474,9 @@ const PatternedMaterial SIMPLE2(Color(0,0,.5), &STRIPES_SHAD);
 
 struct Object {
 	const Material *m;
+	Vector vel;
 	
-	Object () : m(&SIMPLE) {}
-	
-	Object (const Material *mat) : m(mat) {}
+	Object (const Material *mat, Vector _v = Vector(0,0,0)) : m(mat), vel(_v) {}
 	
 	virtual Intersection intersect(const Ray& ray) = 0;
 	virtual ~Object () {}
