@@ -784,7 +784,7 @@ struct World {
 		//room.addObject( new Plane(&GLASS, Vector(5,0,0.01), Vector(0,0,-1)));
 		
 		
-		room.addObject(new Ellipsoid(&GLASS, Vector(6,0,0), Vector(1,2,3), Vector(2,0,0)));
+		room.addObject(new Ellipsoid(&GLASS, Vector(6,0,0), Vector(.25,1,.5), Vector(1,1,.5)));
 		room.addObject(new Paraboloid(Vector(5,0,5), Vector(5,0,0) ,Vector(0,0,1), &GOLD));
 		
 		room.addLight( new PointLight(Vector(2,3,-2), Vector(), Color(1,1,1), 20));	
@@ -910,6 +910,7 @@ void onIdle( ) {
  * TODO Az üveg reflektív és refraktív egyszerre? 
  * TODO Az arany kd-jével hanyadán állunk?
  * TODO Ellipszoid árnyékot vet-e?
+ * TODO Tone mapping
  **/
 
 // ...Idaig modosithatod
