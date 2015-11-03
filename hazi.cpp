@@ -393,7 +393,7 @@ struct Material {
 		return radOut + radIn * get_ks(inter.pos) * pow(cosDelta,get_shin(inter.pos));
 	}
 	
-	Vector reflect(const Vector & normal, const Vector & viewIn) const {
+	static Vector reflect(const Vector & normal, const Vector & viewIn) {
 		return viewIn  - normal * (normal * viewIn) * 2.0 ;
 	}
 	
