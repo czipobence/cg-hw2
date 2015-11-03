@@ -63,10 +63,10 @@
 // Innentol modosithatod...
 
 const float EPSILON = 0.001;
-const float STEP_EPSILON = 0.1;
+const float STEP_EPSILON = 0.001;
 const float L_SP = 1.0;
 const int MAX_DEPTH = 5;
-const float T_MAX = 1000;
+const float T_MAX = 100;
 long GLOBAL_TIME = 0;
 
 //--------------------------------------------------------
@@ -655,19 +655,18 @@ struct Room {
 		if (depth  >= MAX_DEPTH) return AMBIENT_LIGHT;
 		Intersection hit = getFirstInter(ray);
 		
-		if (hit.material == NULL) return Color();
-		if (hit.t <= 0) return Color();
+		if (! hit.real || hit.material == NULL || hit.t <= 0) return Color();
 		Color outRadiance = AMBIENT_LIGHT * hit.material -> get_kd(hit.pos);
 		
 
 		Vector norm = hit.n;
 		Vector vIn = (ray.dir).norm();
 		
-		
 		for (int i = 0; i< lightNumber; i++) {
-			Intersection lightHit = getFirstInter(Ray(hit.pos + hit.n*STEP_EPSILON, lights[i]->getPos(GLOBAL_TIME) - hit.pos));
-			if (lightHit.t <= 0 || lightHit.t > (lights[i]->pos - hit.pos).Length()) 
+			Intersection shadowIntersection = getFirstInter(Ray(hit.pos + hit.n*STEP_EPSILON, lights[i]->getPos(GLOBAL_TIME) - hit.pos));
+			if (shadowIntersection.t <= 0 || shadowIntersection.t > (lights[i]->pos - hit.pos).Length() / L_SP) {
 				outRadiance = outRadiance + hit.material->shade(ray,hit,lights[i]);
+			}
 		}
 		
 		
