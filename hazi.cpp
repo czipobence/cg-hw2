@@ -281,7 +281,7 @@ struct PointLight: public Light {
 	}
 	
 	LightInfo getInfo(Vector intPos) {
-		return LightInfo((getPos(GLOBAL_TIME) - intPos).norm(), GLOBAL_TIME, getLumAt(intPos,GLOBAL_TIME));
+		return LightInfo((getPos(GLOBAL_TIME) - intPos).norm(), (getPos(GLOBAL_TIME) - intPos).Length()/L_SP, getLumAt(intPos,GLOBAL_TIME));
 	}
 	
 };
@@ -377,24 +377,24 @@ struct Material {
 		return shin;
 	}
 	
-	Color shade(const Ray & ray, const Intersection& inter, Light* light) const {
+	Color shade(const Ray & ray, const Intersection& inter, const LightInfo& li) const {
 		Vector normal = inter.n;
 		Vector view = (ray.dir * -1).norm();
-		Vector lDir = (light->getPos(GLOBAL_TIME) - inter.pos).norm();
-		Color lumIn = light -> getLumAt(inter.pos,GLOBAL_TIME);
+		Vector lDir = li.dir;
+		Color radIn = li.radOut;
 		
-		Color lumOut = Color();
+		Color radOut = Color();
 		float cosTheta = normal * lDir;
 		if (cosTheta <= 0) {
 			return Color();
 		}
-		lumOut = lumIn *  cosTheta * get_kd(inter.pos);
+		radOut = radIn *  cosTheta * get_kd(inter.pos);
 		
 		Vector half = (view + lDir).norm();
 		float cosDelta = normal * half;
-		if (cosDelta < 0) return lumOut;
+		if (cosDelta < 0) return radOut;
 		
-		return lumOut + lumIn * get_ks(inter.pos) * pow(cosDelta,get_shin(inter.pos));
+		return radOut + radIn * get_ks(inter.pos) * pow(cosDelta,get_shin(inter.pos));
 	}
 	
 	Vector reflect(const Vector & normal, const Vector & viewIn) const {
@@ -676,9 +676,10 @@ struct Room {
 		Vector vIn = (ray.dir).norm();
 		
 		for (int i = 0; i< lightNumber; i++) {
-			Intersection shadowIntersection = getFirstInter(Ray(hit.pos + hit.n*STEP_EPSILON, lights[i]->getPos(GLOBAL_TIME) - hit.pos));
-			if (shadowIntersection.t <= 0 || shadowIntersection.t > (lights[i]->pos - hit.pos).Length() / L_SP) {
-				outRadiance = outRadiance + hit.material->shade(ray,hit,lights[i]);
+			LightInfo li = lights[i]->getInfo(hit.pos);
+			Intersection shadowIntersection = getFirstInter(Ray(hit.pos + hit.n*STEP_EPSILON, li.dir));
+			if (shadowIntersection.t <= 0 || shadowIntersection.t > li.time) {
+				outRadiance = outRadiance + hit.material->shade(ray,hit,li);
 			}
 		}
 		
