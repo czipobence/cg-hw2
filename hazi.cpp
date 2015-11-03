@@ -301,7 +301,8 @@ struct PointLight: public Light {
 		Vector dV = lumPos - intPos;
 		Color radOut = color *( 1.0 / dV.Length() / dV.Length() * power);
 		
-		return LightInfo((getPos(GLOBAL_TIME) - intPos).norm(), (getPos(GLOBAL_TIME) - intPos).Length()/L_SP, color *( 1.0 / d.Length() / d.Length() * power));
+		return LightInfo(dV.norm(), collTime, radOut);
+		//return LightInfo((getPos(GLOBAL_TIME) - intPos).norm(), (getPos(GLOBAL_TIME) - intPos).Length()/L_SP, color *( 1.0 / d.Length() / d.Length() * power));
 	}
 	
 };
