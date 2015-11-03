@@ -268,7 +268,7 @@ struct Light {
 	Light() : pos(Vector()), vel(Vector()),color(Color()),power(0) {}
 	Light (Vector _p, Vector _v, Color _c, float _pow) : pos(_p), vel(_v), color(_c), power(_pow) {}
 	virtual Vector getPos(float t) { return pos + vel*t;}
-	virtual LightInfo getInfo(Vector intPos) = 0;
+	virtual LightInfo getInfo(Vector intPos, float timeElapsed) = 0;
 	
 	virtual ~Light() {}
 
@@ -278,8 +278,8 @@ struct PointLight: public Light {
 	PointLight (Vector _p, Vector _v, Color _c, float _pow) : Light(_p, _v, _c, _pow) {}
 	
 	
-	LightInfo getInfo(Vector intPos) {
-		Vector d = getPos(GLOBAL_TIME) - intPos;
+	LightInfo getInfo(Vector intPos, float time_elapsed) {
+		Vector d = getPos(time_elapsed) - intPos;
 		
 		float disc = 4 * (vel * d) * (vel *d) - (d *d) * (vel * vel) + (d*d) + L_SP * L_SP;
 		if (disc < 0) {
@@ -297,12 +297,11 @@ struct PointLight: public Light {
 		} else if (t2 > 0) collTime = t2;
 		else return LightInfo();
 		
-		Vector lumPos = getPos(GLOBAL_TIME - collTime);
+		Vector lumPos = getPos(time_elapsed - collTime);
 		Vector dV = lumPos - intPos;
 		Color radOut = color *( 1.0 / dV.Length() / dV.Length() * power);
 		
 		return LightInfo(dV.norm(), collTime, radOut);
-		//return LightInfo((getPos(GLOBAL_TIME) - intPos).norm(), (getPos(GLOBAL_TIME) - intPos).Length()/L_SP, color *( 1.0 / d.Length() / d.Length() * power));
 	}
 	
 };
@@ -666,7 +665,7 @@ struct Room {
 		
 		if (! hit.real || hit.material == NULL || hit.t <= 0) return Color();
 		Color outRadiance = AMBIENT_LIGHT * hit.material -> get_kd(hit.pos);
-		
+		float time_elapsed = ray.shootTime - hit.t;
 		
 		for (int i = 0; i< lightNumber; i++) {
 			Vector norm = hit.n;
@@ -674,7 +673,7 @@ struct Room {
 			
 			if ((vIn * norm) > 0) norm = norm * -1;
 		
-			LightInfo li = lights[i]->getInfo(hit.pos);
+			LightInfo li = lights[i]->getInfo(hit.pos, time_elapsed);
 			if (li.valid) {
 				Intersection shadowIntersection = getFirstInter(Ray(hit.pos + norm*STEP_EPSILON, li.dir));
 				if (shadowIntersection.t <= 0 || shadowIntersection.t > li.time) {
@@ -694,8 +693,6 @@ struct Room {
 			Color fres = hit.material -> fresnel(norm,vIn);
 			Vector vOut = hit.material -> reflect(norm,vIn);
 			
-			float time_elapsed = ray.shootTime - hit.t;
-			
 			Ray reflectedRay = Ray (hit.pos + norm*STEP_EPSILON, vOut,time_elapsed);
 			
 			Color l_in = traceRay(reflectedRay, depth +1);
@@ -709,7 +706,6 @@ struct Room {
 			
 			Color fres = hit.material -> fresnel(nNorm ,vIn);
 			
-			float time_elapsed = GLOBAL_TIME - hit.t;
 			Ray refractedRay = Ray (hit.pos - nNorm*STEP_EPSILON, hit.material -> refract(norm,vIn), time_elapsed);
 			outRadiance = outRadiance + traceRay(refractedRay, depth +1) * (Color(1,1,1) - fres); 
 		}
