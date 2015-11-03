@@ -268,7 +268,6 @@ struct Light {
 	Light() : pos(Vector()), vel(Vector()),color(Color()),power(0) {}
 	Light (Vector _p, Vector _v, Color _c, float _pow) : pos(_p), vel(_v), color(_c), power(_pow) {}
 	virtual Vector getPos(float t) { return pos + vel*t;}
-	virtual Color getLumAt(Vector vpos, float t) = 0;
 	virtual LightInfo getInfo(Vector intPos) = 0;
 	
 	virtual ~Light() {}
@@ -278,10 +277,6 @@ struct Light {
 struct PointLight: public Light {
 	PointLight (Vector _p, Vector _v, Color _c, float _pow) : Light(_p, _v, _c, _pow) {}
 	
-	Color getLumAt(Vector vpos, float t) {
-		Vector dV = getPos(t) - vpos;
-		return color *( 1.0 / dV.Length() / dV.Length() * power);
-	}
 	
 	LightInfo getInfo(Vector intPos) {
 		Vector d = getPos(GLOBAL_TIME) - intPos;
@@ -302,7 +297,11 @@ struct PointLight: public Light {
 		} else if (t2 > 0) collTime = t2;
 		else return LightInfo();
 		
-		return LightInfo((getPos(GLOBAL_TIME) - intPos).norm(), (getPos(GLOBAL_TIME) - intPos).Length()/L_SP, getLumAt(intPos,GLOBAL_TIME));
+		Vector lumPos = getPos(GLOBAL_TIME - collTime);
+		Vector dV = lumPos - intPos;
+		Color radOut = color *( 1.0 / dV.Length() / dV.Length() * power);
+		
+		return LightInfo((getPos(GLOBAL_TIME) - intPos).norm(), (getPos(GLOBAL_TIME) - intPos).Length()/L_SP, color *( 1.0 / d.Length() / d.Length() * power));
 	}
 	
 };
