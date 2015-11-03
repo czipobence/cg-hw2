@@ -65,7 +65,7 @@
 const float EPSILON = 0.001;
 const float STEP_EPSILON = 0.001;
 const float L_SP = 1.0;
-const int MAX_DEPTH = 5;
+const int MAX_DEPTH = 500;
 const float T_MAX = 100;
 long GLOBAL_TIME = 0;
 
@@ -507,8 +507,7 @@ struct QuadricShape : public Object {
 			
 			n = n.norm();
 			
-			
-			//if ((n * dir) > 0) n = n*-1;
+			//if (dir * n > 0) n = n * -1;
 			
 			return n;
 			
@@ -608,41 +607,20 @@ struct Ellipsoid : public QuadricShape {
 		Matrix_4_4 matr = Matrix_4_4::eye();
 		matr.matr[3][3] = 0;
 	
-		for (int i = 0; i < 4; i++) {
-			for (int j = 0; j < 4; j++)
-				std::cout << matr.matr[i][j] << ", ";
-			std::cout << std::endl;
-		}
-	
 		Matrix_4_4 trans = Matrix_4_4::scale(sc);
 			
 		matr = trans.T() * matr * trans;
 		
-		for (int i = 0; i < 4; i++) {
-			for (int j = 0; j < 4; j++)
-				std::cout << matr.matr[i][j] << ", ";
-			std::cout << std::endl;
-		}
-	
 		trans = Matrix_4_4::rotateX(rot.x) * Matrix_4_4::rotateY(rot.y) * Matrix_4_4::rotateZ(rot.z);
 			
 		matr = trans.T() * matr * trans;
 		
-		for (int i = 0; i < 4; i++) {
-			for (int j = 0; j < 4; j++)
-				std::cout << matr.matr[i][j] << ", ";
-			std::cout << std::endl;
-		}
 		
 		trans = Matrix_4_4::translate(pos);
 	
 		matr = (trans.T() * matr) * trans;
 		
-		for (int i = 0; i < 4; i++) {
-			for (int j = 0; j < 4; j++)
-				std::cout << matr.matr[i][j] << ", ";
-			std::cout << std::endl;
-		}
+
 		matr.matr[3][3] -= 1;
 		
 		setParams(matr);
@@ -801,9 +779,9 @@ struct World {
 	
 		room.addObject( new Plane(&SIMPLE2,Vector(10,0,0),Vector(-1,0,0)));
 		//room.addObject( new Plane(&GLASS,Vector(10.1,0,0),Vector(1,0,0)));
-		room.addObject( new Plane(new Material(Color(.9,.9,.9)),Vector(10,0,-5),Vector(0,0,1)));
+		room.addObject( new Plane(new Material(Color(.2,.4,.6)),Vector(10,0,-5),Vector(0,0,1)));
 		//room.addObject( new Plane(&SIMPLE2,Vector(10,0,5),Vector(0,0,-1)));
-		room.addObject( new Plane(new Material(Color(.9,.9,.9)),Vector(10,5,0),Vector(0,-1,0)));
+		room.addObject( new Plane(new Material(Color(.6,.4,.2)),Vector(10,5,0),Vector(0,-1,0)));
 		room.addObject( new Plane(new Material(Color(.5,0,0)),Vector(10,-5,0),Vector(0,1,0)));
 		room.addObject( new Plane(&SIMPLE,Vector(0,0,0),Vector(1,0,0)));
 		
@@ -814,7 +792,7 @@ struct World {
 		room.addObject(new Ellipsoid(&GLASS, Vector(6,0,0), Vector(.25,1,.5), Vector(1,1,.5)));
 		room.addObject(new Paraboloid(&GOLD, Vector(5,0,7.5), Vector(5,0,-2.5) ,Vector(0,0,1)));
 		
-		room.addLight( new PointLight(Vector(2,3,-2), Vector(1,-0.67,.67), Color(1,1,1), 20));	
+		room.addLight( new PointLight(Vector(2,3,-2), Vector(.3,-0.3,.3), Color(1,1,1), 20));	
 		
 	}
 	
