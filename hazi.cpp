@@ -251,9 +251,9 @@ const Color AMBIENT_LIGHT(.3,.3,.3);
 struct LightInfo {
 	Vector dir;
 	float time;
-	Color radOut;
+	Color rad;
 	
-	LightInfo(Vector _dir, float _t, Color _rOut): dir(_dir), time(_t), radOut(_rOut) {}
+	LightInfo(Vector _dir, float _t, Color _r): dir(_dir), time(_t), rad(_r) {}
 	
 };
 
@@ -381,17 +381,13 @@ struct Material {
 		Vector normal = inter.n;
 		Vector view = (ray.dir * -1).norm();
 		Vector lDir = li.dir;
-		Color radIn = li.radOut;
+		Color radIn = li.rad;
 		
 		Color radOut = Color();
 		float cosTheta = normal * lDir;
-		if (cosTheta <= 0) {
-			return Color();
-		}
+		if (cosTheta <= 0)return radOut;
 		radOut = radIn *  cosTheta * get_kd(inter.pos);
-		
-		Vector half = (view + lDir).norm();
-		float cosDelta = normal * half;
+		float cosDelta = normal * ((view + lDir).norm());
 		if (cosDelta < 0) return radOut;
 		
 		return radOut + radIn * get_ks(inter.pos) * pow(cosDelta,get_shin(inter.pos));
