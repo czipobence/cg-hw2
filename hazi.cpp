@@ -248,6 +248,15 @@ struct Color {
 
 const Color AMBIENT_LIGHT(.3,.3,.3);
 
+struct LightInfo {
+	Vector dir;
+	float time;
+	Color radOut;
+	
+	LightInfo(Vector _dir, float _t, Color _rOut): dir(_dir), time(_t), radOut(_rOut) {}
+	
+};
+
 struct Light {
 	Vector pos,vel;
 	Color color;
@@ -256,9 +265,8 @@ struct Light {
 	Light() : pos(Vector()), vel(Vector()),color(Color()),power(0) {}
 	Light (Vector _p, Vector _v, Color _c, float _pow) : pos(_p), vel(_v), color(_c), power(_pow) {}
 	virtual Vector getPos(float t) { return pos + vel*t;}
-	virtual Color getLumAt(Vector vpos, float t) {
-		return AMBIENT_LIGHT;
-	}
+	virtual Color getLumAt(Vector vpos, float t) = 0;
+	virtual LightInfo getInfo(Vector intPos) = 0;
 	
 	virtual ~Light() {}
 
@@ -271,6 +279,11 @@ struct PointLight: public Light {
 		Vector dV = getPos(t) - vpos;
 		return color *( 1.0 / dV.Length() / dV.Length() * power);
 	}
+	
+	LightInfo getInfo(Vector intPos) {
+		return LightInfo((getPos(GLOBAL_TIME) - intPos).norm(), GLOBAL_TIME, getLumAt(intPos,GLOBAL_TIME));
+	}
+	
 };
 
 struct Material;
