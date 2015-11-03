@@ -246,7 +246,7 @@ struct Color {
    }
 };
 
-const Color AMBIENT_LIGHT(.3,.3,.3);
+const Color AMBIENT_LIGHT(.7,.7,.7);
 
 struct LightInfo {
 	Vector dir;
@@ -377,20 +377,18 @@ struct Material {
 		return shin;
 	}
 	
-	Color shade(const Ray & ray, const Intersection& inter, const LightInfo& li) const {
-		Vector normal = inter.n;
-		Vector view = (ray.dir * -1).norm();
+	Color shade(const Vector & normal, const Vector& viewDir, const Vector& pos, const LightInfo& li) const {
 		Vector lDir = li.dir;
 		Color radIn = li.rad;
 		
 		Color radOut = Color();
 		float cosTheta = normal * lDir;
 		if (cosTheta <= 0)return radOut;
-		radOut = radIn *  cosTheta * get_kd(inter.pos);
-		float cosDelta = normal * ((view + lDir).norm());
+		radOut = radIn *  cosTheta * get_kd(pos);
+		float cosDelta = normal * ((viewDir + lDir).norm());
 		if (cosDelta < 0) return radOut;
 		
-		return radOut + radIn * get_ks(inter.pos) * pow(cosDelta,get_shin(inter.pos));
+		return radOut + radIn * get_ks(pos) * pow(cosDelta,get_shin(pos));
 	}
 	
 	static Vector reflect(const Vector & normal, const Vector & viewIn) {
@@ -405,10 +403,12 @@ struct Material {
 			cosalpha *= -1;
 			norm = normal * -1;
 			rn = 1.0/rn;
+			//std::cout << "HAPPENED" << rn << std::endl;
+		
 		}
 		
 		float disc = 1 - (1 - cosalpha * cosalpha) / rn /rn;
-		if (disc < 0) return reflect(norm,viewIn);
+		if (disc < 0) { return reflect(norm,viewIn); std::cout << "??"; }
 		return (viewIn / rn + norm * (cosalpha / rn - sqrt(disc))).norm();
 		
 	}
@@ -471,7 +471,7 @@ struct Plane : public Object {
 		if (fabs(ray.dir * n) < EPSILON) return Intersection();
 		float intersection_param = ((p - ray.p0) * n)/(ray.dir * n);
 		if (intersection_param < 0) return Intersection();
-		return Intersection(ray.getVec(intersection_param),n*ray.dir > 0 ? n * -1 : n,intersection_param,m);
+		return Intersection(ray.getVec(intersection_param),n,intersection_param,m);
 	}
 };
 
@@ -488,7 +488,7 @@ struct QuadricShape : public Object {
 			n = n.norm();
 			
 			
-			if ((n * dir) > 0) n = n*-1;
+			//if ((n * dir) > 0) n = n*-1;
 			
 			return n;
 			
@@ -667,20 +667,28 @@ struct Room {
 		if (! hit.real || hit.material == NULL || hit.t <= 0) return Color();
 		Color outRadiance = AMBIENT_LIGHT * hit.material -> get_kd(hit.pos);
 		
-
-		Vector norm = hit.n;
-		Vector vIn = (ray.dir).norm();
 		
 		for (int i = 0; i< lightNumber; i++) {
+			Vector norm = hit.n;
+			Vector vIn = (ray.dir);
+			
+			if ((vIn * norm) > 0) norm = norm * -1;
+		
 			LightInfo li = lights[i]->getInfo(hit.pos);
-			Intersection shadowIntersection = getFirstInter(Ray(hit.pos + hit.n*STEP_EPSILON, li.dir));
+			Intersection shadowIntersection = getFirstInter(Ray(hit.pos + norm*STEP_EPSILON, li.dir));
 			if (shadowIntersection.t <= 0 || shadowIntersection.t > li.time) {
-				outRadiance = outRadiance + hit.material->shade(ray,hit,li);
+				outRadiance = outRadiance + hit.material->shade(norm,vIn * -1, hit.pos,li);
 			}
 		}
 		
-		
+
 		if (hit.material->reflective) {
+			
+			Vector norm = hit.n;
+			Vector vIn = (ray.dir);
+			
+			if ((vIn * norm) > 0) norm = norm * -1;
+			
 			Color fres = hit.material -> fresnel(norm,vIn);
 			Vector vOut = hit.material -> reflect(norm,vIn);
 			
@@ -690,14 +698,19 @@ struct Room {
 			//std::cout << "NROM: " << norm.x << ", " << norm.y << ", " << norm.z << std::endl;
 			//std::cout << "VOUT: " << vOut.x << ", " << vOut.y << ", " << vOut.z << std::endl;
 			
-			Color l_in = traceRay(Ray (hit.pos + hit.n*STEP_EPSILON, vOut), depth +1);
+			Color l_in = traceRay(Ray (hit.pos + norm*STEP_EPSILON, vOut), depth +1);
 			//std::cout << l_in.r << " " << l_in.g << " " << l_in.b << std::endl;
 			outRadiance = outRadiance + (l_in * fres) ; 
 		}
 		if (hit.material->refractive) {
-			Color fres = hit.material -> fresnel(norm,vIn);
+			
+			Vector norm = hit.n;
+			Vector vIn = (ray.dir);
+			Vector nNorm = (vIn * norm > 0) ? norm * -1 : norm;
+			
+			Color fres = hit.material -> fresnel(nNorm ,vIn);
 			//std::cout << (Color(1,1,1) - fres).r << " " << outRadiance.r << std::endl;
-			outRadiance = outRadiance + traceRay(Ray (hit.pos - hit.n*STEP_EPSILON, hit.material -> refract(norm,vIn)), depth +1) * (Color(1,1,1) - fres); 
+			outRadiance = outRadiance + traceRay(Ray (hit.pos - nNorm*STEP_EPSILON, hit.material -> refract(norm,vIn)), depth +1) * (Color(1,1,1) - fres); 
 		}
 		return outRadiance;
 	}
@@ -759,13 +772,17 @@ struct World {
 		//screen = Screen();
 		//room = Room();
 	
-		room.addObject( new Plane(new Material(Color(.9,.9,.9)),Vector(10,0,0),Vector(-1,0,0)));
+		room.addObject( new Plane(&SIMPLE2,Vector(10,0,0),Vector(-1,0,0)));
 		//room.addObject( new Plane(&GLASS,Vector(10.1,0,0),Vector(1,0,0)));
 		room.addObject( new Plane(new Material(Color(.9,.9,.9)),Vector(10,0,-5),Vector(0,0,1)));
-		//room.addObject( new Plane(&GOLD,Vector(10,0,5),Vector(0,0,-1)));
+		//room.addObject( new Plane(&SIMPLE2,Vector(10,0,5),Vector(0,0,-1)));
 		room.addObject( new Plane(new Material(Color(.9,.9,.9)),Vector(10,5,0),Vector(0,-1,0)));
 		room.addObject( new Plane(new Material(Color(.5,0,0)),Vector(10,-5,0),Vector(0,1,0)));
-		room.addObject( new Plane(new Material(Color(.9,.9,.9)),Vector(0,0,0),Vector(1,0,0)));
+		room.addObject( new Plane(&SIMPLE,Vector(0,0,0),Vector(1,0,0)));
+		
+		//room.addObject( new Plane(&GLASS, Vector(6,0,0), Vector(0,0,-1)));
+		//room.addObject( new Plane(&GLASS, Vector(5,0,0.01), Vector(0,0,-1)));
+		
 		
 		room.addObject(new Ellipsoid(&GLASS, Vector(6,0,0), Vector(1,2,3), Vector(2,0,0)));
 		room.addObject(new Paraboloid(Vector(5,0,5), Vector(5,0,0) ,Vector(0,0,1), &GOLD));
@@ -787,8 +804,8 @@ struct World {
 
 World world;
 
-Vector camPos = Vector(9.9,1,1);
-Vector camFwd = Vector(-1,0,0);
+Vector camPos = Vector(5,1,-4.2);
+Vector camFwd = Vector(0,0,1);
 Vector camUp = Vector(0,1,0);
 
 // Inicializacio, a program futasanak kezdeten, az OpenGL kontextus letrehozasa utan hivodik meg (ld. main() fv.)
