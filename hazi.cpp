@@ -710,7 +710,7 @@ struct Screen {
 		glDrawPixels(WIDTH, HEIGHT, GL_RGB, GL_FLOAT, image);
 	}
 	
-	Vector static getPixelPos(int x, int y) {
+	Vector static getPixelPos(float x, float y) {
 		float posX = (x + 0.5) / ((float) Screen::WIDTH/2.0) - 1;
 		float posY = (y + 0.5) / ((float) Screen::HEIGHT/2.0) - 1; 
 		return Vector (posX,posY);		
