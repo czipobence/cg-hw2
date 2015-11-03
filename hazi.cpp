@@ -462,13 +462,13 @@ Color stripes(const Vector & pos) {
 }
 
 ShadowPattern STRIPES_SHAD(&stripes);
-TwoColoredPattern STRIPES_TWO(&stripes, Color(.5,0,0));
+TwoColoredPattern STRIPES_TWO(&stripes, Color(.5,.1,.4));
 
 //kd from https://en.wikibooks.org/wiki/Blender_3D:_Noob_to_Pro/Every_Material_Known_to_Man/Gold
-const Material GOLD(Color(1,0.88,0.25), Color(), Color(0.17,0.35,1.5),Color(3.1,2.7,1.9),true,false,0);
+const Material GOLD(Color(/*1,0.88,0.25*/), Color(), Color(0.17,0.35,1.5),Color(3.1,2.7,1.9),true,false,0);
 const Material GLASS(Color(), Color(), Color(1.5,1.5,1.5),Color(0,0,0),true,true,0);
-const PatternedMaterial SIMPLE(Color(0,.5,0), Color(0,0,0), Color(),Color(),false,false,0, &STRIPES_TWO);
-const PatternedMaterial SIMPLE2(Color(0,0,.5), &STRIPES_SHAD);
+const PatternedMaterial SIMPLE(Color(.2,.5,.1), Color(0,0,0), Color(),Color(),false,false,0, &STRIPES_TWO);
+const PatternedMaterial SIMPLE2(Color(.7,.8,.5), &STRIPES_SHAD);
 
 
 struct Object {
@@ -776,7 +776,7 @@ struct World {
 		room.addObject( new Plane(new Material(Color(.2,.4,.6)),Vector(10,0,-5),Vector(0,0,1)));
 		//room.addObject( new Plane(&SIMPLE2,Vector(10,0,5),Vector(0,0,-1)));
 		room.addObject( new Plane(new Material(Color(.6,.4,.2)),Vector(10,5,0),Vector(0,-1,0)));
-		room.addObject( new Plane(new Material(Color(.5,0,0)),Vector(10,-5,0),Vector(0,1,0)));
+		room.addObject( new Plane(new Material(Color(.3,.3,.9)),Vector(10,-5,0),Vector(0,1,0)));
 		room.addObject( new Plane(&SIMPLE,Vector(0,0,0),Vector(1,0,0)));
 		
 		//room.addObject( new Plane(&GLASS, Vector(6,0,0), Vector(0,0,-1)));
