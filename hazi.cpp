@@ -711,8 +711,8 @@ struct Screen {
 	}
 	
 	Vector static getPixelPos(float x, float y) {
-		float posX = (x + 0.5) / ((float) Screen::WIDTH/2.0) - 1;
-		float posY = (y + 0.5) / ((float) Screen::HEIGHT/2.0) - 1; 
+		float posX = (x + 0.5) / ((float) Screen::WIDTH/2.0) - 1.0;
+		float posY = (y + 0.5) / ((float) Screen::HEIGHT/2.0) - 1.0; 
 		return Vector (posX,posY);		
 	}
 	
@@ -734,8 +734,8 @@ struct Camera {
 	
 	Ray getRay(int x, int y) {
 		Vector hitScreen = Screen::getPixelPos(x,y);
-		hitScreen = pos + dir + right * hitScreen.x + up * hitScreen.y;
-		return Ray(pos,hitScreen-pos);
+		hitScreen = dir + right * hitScreen.x + up * hitScreen.y;
+		return Ray(pos,hitScreen);
 	}
 	
 };
@@ -761,7 +761,7 @@ struct World {
 		room.addObject(new Ellipsoid(&GLASS, Vector(6,0,0), Vector(1,2,3), Vector(2,0,0)));
 		room.addObject(new Paraboloid(Vector(5,0,5), Vector(5,0,0) ,Vector(0,0,1), &GOLD));
 		
-		room.addLight( new PointLight(Vector(2,3,-2), Vector(), Color(1,1,1), 40));	
+		room.addLight( new PointLight(Vector(2,3,-2), Vector(), Color(1,1,1), 20));	
 		
 	}
 	
@@ -778,8 +778,8 @@ struct World {
 
 World world;
 
-Vector camPos = Vector(.1,0,0);
-Vector camFwd = Vector(1,0,0);
+Vector camPos = Vector(9.9,1,1);
+Vector camFwd = Vector(-1,0,0);
 Vector camUp = Vector(0,1,0);
 
 // Inicializacio, a program futasanak kezdeten, az OpenGL kontextus letrehozasa utan hivodik meg (ld. main() fv.)
