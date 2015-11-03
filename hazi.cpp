@@ -124,19 +124,6 @@ struct Matrix_4_4{
 				matr[i][j] = ma[i][j];
 	} 
 	
-	/*Matrix_4_4 (float f[]) {
-		matr[0][0] = f[0];
-		matr[1][1] = f[1];
-		matr[2][2] = f[2];
-		matr[0][1] = matr[1][0] =  f[3] / 2.0;
-		matr[0][2] = matr[2][0] =  f[4] / 2.0;
-		matr[0][3] = matr[3][0] =  f[6] / 2.0;
-		matr[1][2] = matr[2][1] =  f[5] / 2.0;
-		matr[1][3] = matr[3][1] =  f[7] / 2.0;
-		matr[2][3] = matr[3][2] =  f[8] / 2.0;
-		matr[3][3] = f[9];
-	}*/
-	
 	Matrix_4_4 operator *(const Matrix_4_4 & m) const {
 		float ma[4][4];
 		
@@ -462,7 +449,7 @@ struct Object {
 	
 	Object (const Material *mat) : m(mat) {}
 	
-	virtual Intersection intersect(const Ray& ray) { return Intersection();}
+	virtual Intersection intersect(const Ray& ray) = 0;
 	virtual ~Object () {}
 };
 
