@@ -323,7 +323,7 @@ struct Ray {
 	Ray() : p0(Vector()), dir(Vector()) {};
 	Ray(Vector o, Vector d) : p0(o), dir(d.norm()) {}
 	Vector getVec(float t) const {
-		return p0 + dir *t;
+		return p0 + dir *t * L_SP;
 	}
 };
 
