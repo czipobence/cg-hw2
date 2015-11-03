@@ -65,9 +65,9 @@
 const float EPSILON = 0.001;
 const float STEP_EPSILON = 0.001;
 const float L_SP = 1.0;
-const int MAX_DEPTH = 10;
+const int MAX_DEPTH = 5;
 const float T_MAX = 100;
-long GLOBAL_TIME = 0;
+float GLOBAL_TIME = 0;
 
 //--------------------------------------------------------
 // 3D Vektor
@@ -320,8 +320,8 @@ struct Intersection {
 
 struct Ray {
 	Vector p0, dir;
-	Ray() : p0(Vector()), dir(Vector()) {};
-	Ray(Vector o, Vector d) : p0(o), dir(d.norm()) {}
+	float shootTime;
+	Ray(Vector o = Vector(), Vector d = Vector(), float shoot_t = 0.0f) : p0(o), dir(d.norm()), shootTime(shoot_t) {}
 	Vector getVec(float t) const {
 		return p0 + dir *t * L_SP;
 	}
@@ -516,7 +516,7 @@ struct QuadricShape : public Object {
 		Intersection intersect(const Ray& ray) {
 			
 			Vector r0 = ray.p0 - (vel * GLOBAL_TIME);
-			Vector rd = ray.dir * L_SP + vel;
+			Vector rd = (ray.dir * L_SP) + vel;
 			
 			float x0 = r0.x;
 			float y0 = r0.y;
@@ -789,10 +789,10 @@ struct World {
 		//room.addObject( new Plane(&GLASS, Vector(5,0,0.01), Vector(0,0,-1)));
 		
 		
-		room.addObject(new Ellipsoid(&GLASS, Vector(6,0,0), Vector(.25,1,.5), Vector(1,1,.5)));
+		room.addObject(new Ellipsoid(&GLASS, Vector(5,0,0), Vector(.25,.25,1), Vector(1,0,.2), Vector(0,0,-0.2)));
 		room.addObject(new Paraboloid(&GOLD, Vector(5,0,7.5), Vector(5,0,-2.5) ,Vector(0,0,1)));
 		
-		room.addLight( new PointLight(Vector(2,3,-2), Vector(.3,-0.3,.3), Color(1,1,1), 20));	
+		room.addLight( new PointLight(Vector(2,3,-2), Vector(0,0,0), Color(1,1,1), 20));	
 		
 	}
 	
@@ -809,8 +809,8 @@ struct World {
 
 World world;
 
-Vector camPos = Vector(5,1,-4.2);
-Vector camFwd = Vector(0,0,1);
+Vector camPos = Vector(.1,0,0);
+Vector camFwd = Vector(1,0,0);
 Vector camUp = Vector(0,1,0);
 
 // Inicializacio, a program futasanak kezdeten, az OpenGL kontextus letrehozasa utan hivodik meg (ld. main() fv.)
