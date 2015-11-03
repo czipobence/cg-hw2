@@ -515,12 +515,16 @@ struct QuadricShape : public Object {
 		}
 		
 		Intersection intersect(const Ray& ray) {
-			float x0 =ray.p0.x;
-			float y0 = ray.p0.y;
-			float z0 = ray.p0.z;
-			float xd = ray.dir.x;
-			float yd = ray.dir.y;
-			float zd = ray.dir.z;
+			
+			Vector r0 = ray.p0 - (vel * GLOBAL_TIME);
+			Vector rd = ray.dir * L_SP + vel;
+			
+			float x0 = r0.x;
+			float y0 = r0.y;
+			float z0 = r0.z;
+			float xd = rd.x;
+			float yd = rd.y;
+			float zd = rd.z;
 			
 			
 			float Av = A * xd *xd + B * yd *yd + C * zd * zd + D * xd * yd + E * xd *zd + F * yd * zd;
