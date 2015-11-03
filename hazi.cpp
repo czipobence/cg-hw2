@@ -173,31 +173,34 @@ struct Matrix_4_4{
 	}
 	
 	static Matrix_4_4 rotateX(const float alpha) {
+		float a = -alpha;
 		Matrix_4_4 tmp = eye();
-		tmp.matr[1][1] = cos(alpha);
-		tmp.matr[1][2] = sin(alpha);
-		tmp.matr[2][1] = -1 * sin(alpha);
-		tmp.matr[2][2] = cos(alpha);
+		tmp.matr[1][1] = cos(a);
+		tmp.matr[1][2] = sin(a);
+		tmp.matr[2][1] = -1 * sin(a);
+		tmp.matr[2][2] = cos(a);
 		
 		return tmp;
 	}
 	
 	static Matrix_4_4 rotateY(const float alpha) {
+		float a = -alpha;
 		Matrix_4_4 tmp = eye();
-		tmp.matr[0][0] = cos(alpha);
-		tmp.matr[0][2] = -1 * sin(alpha);
-		tmp.matr[2][0] = sin(alpha);
-		tmp.matr[2][2] = cos(alpha);
+		tmp.matr[0][0] = cos(a);
+		tmp.matr[0][2] = -1 * sin(a);
+		tmp.matr[2][0] = sin(a);
+		tmp.matr[2][2] = cos(a);
 		
 		return tmp;
 	}
 	
 	static Matrix_4_4 rotateZ(const float alpha) {
+		float a = -alpha;
 		Matrix_4_4 tmp = eye();
-		tmp.matr[0][0] = cos(alpha);
-		tmp.matr[0][1] = sin(alpha);
-		tmp.matr[1][0] = -1 * sin(alpha);
-		tmp.matr[1][1] = cos(alpha);
+		tmp.matr[0][0] = cos(a);
+		tmp.matr[0][1] = sin(a);
+		tmp.matr[1][0] = -1 * sin(a);
+		tmp.matr[1][1] = cos(a);
 		
 		return tmp;
 	}
@@ -595,7 +598,7 @@ struct Paraboloid : public QuadricShape {
 
 struct Ellipsoid : public QuadricShape {
 	
-	Ellipsoid(const Vector& pos, const Vector& sc, const Material *m): QuadricShape(m) {
+	Ellipsoid(const Material *m, const Vector& pos, const Vector& sc,const Vector& rot): QuadricShape(m) {
 		Matrix_4_4 matr = Matrix_4_4::eye();
 		matr.matr[3][3] = 0;
 	
@@ -615,7 +618,7 @@ struct Ellipsoid : public QuadricShape {
 			std::cout << std::endl;
 		}
 	
-		trans = Matrix_4_4::rotateZ(1);
+		trans = Matrix_4_4::rotateX(rot.x) * Matrix_4_4::rotateY(rot.y) * Matrix_4_4::rotateZ(rot.z);
 			
 		matr = trans.T() * matr * trans;
 		
@@ -773,7 +776,7 @@ struct World {
 		//screen = Screen();
 		//room = Room();
 	
-		room.addObject( new Plane(&SIMPLE,Vector(10,0,0),Vector(-1,0,0)));
+		room.addObject( new Plane(new Material(Color(.9,.9,.9)),Vector(10,0,0),Vector(-1,0,0)));
 		//room.addObject( new Plane(&GLASS,Vector(10.1,0,0),Vector(1,0,0)));
 		room.addObject( new Plane(new Material(Color(.9,.9,.9)),Vector(10,0,-5),Vector(0,0,1)));
 		//room.addObject( new Plane(&GOLD,Vector(10,0,5),Vector(0,0,-1)));
@@ -781,7 +784,7 @@ struct World {
 		room.addObject( new Plane(new Material(Color(.5,0,0)),Vector(10,-5,0),Vector(0,1,0)));
 		room.addObject( new Plane(new Material(Color(.9,.9,.9)),Vector(0,0,0),Vector(1,0,0)));
 		
-		room.addObject(new Ellipsoid(Vector(6,0,0), Vector(1,2,3), &GLASS));
+		room.addObject(new Ellipsoid(&GLASS, Vector(6,0,0), Vector(1,2,3), Vector(2,0,0)));
 		room.addObject(new Paraboloid(Vector(5,0,5), Vector(5,0,0) ,Vector(0,0,1), &GOLD));
 		
 		room.addLight( new PointLight(Vector(2,3,-2), Vector(), Color(1,1,1), 40));	
