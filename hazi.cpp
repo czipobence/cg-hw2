@@ -286,7 +286,21 @@ struct PointLight: public Light {
 	LightInfo getInfo(Vector intPos) {
 		Vector d = getPos(GLOBAL_TIME) - intPos;
 		
-		//float disc = 
+		float disc = 4 * (vel * d) * (vel *d) - (d *d) * (vel * vel) + (d*d) + L_SP * L_SP;
+		if (disc < 0) {
+			std::cout << "Nincs metszés???" << std::endl;
+			return LightInfo();
+		}
+		disc = sqrtf(disc);
+		float t1 = (vel * d * 2.0 + disc) / 2.0 / (vel * vel - L_SP * L_SP);
+		float t2 = (vel * d * 2.0 - disc) / 2.0 / (vel * vel - L_SP * L_SP);
+		
+		float collTime;
+		if (t1 > 0) {
+			if (t2 > 0 && t2 < t1) collTime = t2;
+			else collTime = t1;
+		} else if (t2 > 0) collTime = t2;
+		else return LightInfo();
 		
 		return LightInfo((getPos(GLOBAL_TIME) - intPos).norm(), (getPos(GLOBAL_TIME) - intPos).Length()/L_SP, getLumAt(intPos,GLOBAL_TIME));
 	}
@@ -682,9 +696,11 @@ struct Room {
 			if ((vIn * norm) > 0) norm = norm * -1;
 		
 			LightInfo li = lights[i]->getInfo(hit.pos);
-			Intersection shadowIntersection = getFirstInter(Ray(hit.pos + norm*STEP_EPSILON, li.dir));
-			if (shadowIntersection.t <= 0 || shadowIntersection.t > li.time) {
-				outRadiance = outRadiance + hit.material->shade(norm,vIn * -1, hit.pos,li);
+			if (li.valid) {
+				Intersection shadowIntersection = getFirstInter(Ray(hit.pos + norm*STEP_EPSILON, li.dir));
+				if (shadowIntersection.t <= 0 || shadowIntersection.t > li.time) {
+					outRadiance = outRadiance + hit.material->shade(norm,vIn * -1, hit.pos,li);
+				}
 			}
 		}
 		
@@ -779,6 +795,8 @@ struct World {
 		//screen = Screen();
 		//room = Room();
 	
+		GLOBAL_TIME = 10;
+	
 		room.addObject( new Plane(&SIMPLE2,Vector(10,0,0),Vector(-1,0,0)));
 		//room.addObject( new Plane(&GLASS,Vector(10.1,0,0),Vector(1,0,0)));
 		room.addObject( new Plane(new Material(Color(.9,.9,.9)),Vector(10,0,-5),Vector(0,0,1)));
@@ -794,7 +812,7 @@ struct World {
 		room.addObject(new Ellipsoid(&GLASS, Vector(6,0,0), Vector(.25,1,.5), Vector(1,1,.5)));
 		room.addObject(new Paraboloid(Vector(5,0,5), Vector(5,0,0) ,Vector(0,0,1), &GOLD));
 		
-		room.addLight( new PointLight(Vector(2,3,-2), Vector(), Color(1,1,1), 20));	
+		room.addLight( new PointLight(Vector(2,3,-2), Vector(.3,-0.3,.3), Color(1,1,1), 20));	
 		
 	}
 	
