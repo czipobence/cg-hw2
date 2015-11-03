@@ -462,7 +462,7 @@ struct Plane : public Object {
 		if (fabs(ray.dir * n) < EPSILON) return Intersection();
 		float intersection_param = ((p - ray.p0) * n)/(ray.dir * n);
 		if (intersection_param < 0) return Intersection();
-		return Intersection(ray.getVec(intersection_param),n,intersection_param,m);
+		return Intersection(ray.getVec(intersection_param),n*ray.dir > 0 ? n * -1 : n,intersection_param,m);
 	}
 };
 
@@ -528,19 +528,6 @@ struct QuadricShape : public Object {
 			
 		}
 		
-		void setParams(float params[10]) {
-			A = params[0];
-			B = params[1];
-			C = params[2];
-			D = params[3];
-			E = params[4];
-			F = params[5];
-			G = params[6];
-			H = params[7];
-			I = params[8];
-			J = params[9];
-		}
-		
 		void setParams(Matrix_4_4 m) {
 			A = m.matr[0][0];
 			B = m.matr[1][1];
@@ -556,7 +543,7 @@ struct QuadricShape : public Object {
 		
 		QuadricShape(const Material * m) : Object(m) {}
 		QuadricShape() : Object(&GLASS) {}
-		virtual ~QuadricShape() {}
+		virtual ~QuadricShape() {};
 		
 };
 
