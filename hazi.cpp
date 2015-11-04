@@ -320,7 +320,7 @@ struct Intersection {
 struct Ray {
 	Vector p0, dir;
 	float shootTime;
-	Ray(Vector o = Vector(), Vector d = Vector(), float shoot_t = GLOBAL_TIME) : p0(o), dir(d.norm()), shootTime(shoot_t) {}
+	Ray(Vector o, Vector d, float shoot_t) : p0(o), dir(d.norm()), shootTime(shoot_t) {}
 	Vector getVec(float t) const {
 		return p0 + dir *t * L_SP;
 	}
@@ -754,7 +754,7 @@ struct Camera {
 	Ray getRay(int x, int y) {
 		Vector hitScreen = Screen::getPixelPos(x,y);
 		hitScreen = dir + right * hitScreen.x + up * hitScreen.y;
-		return Ray(pos,hitScreen);
+		return Ray(pos,hitScreen, GLOBAL_TIME);
 	}
 	
 };
