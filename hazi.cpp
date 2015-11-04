@@ -675,7 +675,7 @@ struct Room {
 		
 			LightInfo li = lights[i]->getInfo(hit.pos, time_elapsed);
 			if (li.valid) {
-				Intersection shadowIntersection = getFirstInter(Ray(hit.pos + norm*STEP_EPSILON, li.dir));
+				Intersection shadowIntersection = getFirstInter(Ray(hit.pos + norm*STEP_EPSILON, li.dir, time_elapsed));
 				if (shadowIntersection.t <= 0 || shadowIntersection.t > li.time) {
 					outRadiance = outRadiance + hit.material->shade(norm,vIn * -1, hit.pos,li);
 				}
@@ -786,7 +786,7 @@ struct World {
 		room.addObject(new Ellipsoid(&GLASS, Vector(5,0,0), Vector(.25,.25,1), Vector(1,0,.2), Vector(-0.4,.4,.4)));
 		room.addObject(new Paraboloid(&GOLD, Vector(5,0,7.5), Vector(5,0,-2.5) ,Vector(0,0,1)));
 		
-		room.addLight( new PointLight(Vector(2,3,-2), Vector(0,0,0), Color(1,1,1), 20));	
+		room.addLight( new PointLight(Vector(3,4,-2), Vector(.4,0,.4), Color(1,1,1), 20));	
 		
 	}
 	
@@ -830,7 +830,7 @@ void onDisplay( ) {
 // Billentyuzet esemenyeket lekezelo fuggveny (lenyomas)
 void onKeyboard(unsigned char key, int x, int y) {
     if (key == ' ') {
-		GLOBAL_TIME = glutGet(GLUT_ELAPSED_TIME);
+		GLOBAL_TIME = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
 		//CALCULATE_IMAGE
 		//calculateImage(time)
 		glutPostRedisplay( );
