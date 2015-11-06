@@ -450,13 +450,12 @@ struct SmoothMaterial: public Material {
 		SmoothMaterial (Color _n, Color _k, bool refr = false, bool refl = true): Material(Color(),Color(),_n,_k,refl,refr,0) {}
 };
 
-struct PatternedMaterial : public Material {
+struct PatternedMaterial : public RoughMaterial {
 	const Pattern* pattern;
 	
-	PatternedMaterial(Color _kd, Color _ks, Color _n, Color _k, bool refl, bool refr, float _s, const Pattern* _pattern) :
-	Material(_kd,_ks,_n,_k,refl,refr,_s), pattern(_pattern) {}
-	PatternedMaterial(Color c, const Pattern* _pattern) : Material(c), pattern(_pattern) {}
-	PatternedMaterial(const Pattern* _pattern) : Material(), pattern(_pattern) {}
+	PatternedMaterial(Color _kd, Color _ks, float _s, const Pattern* _pattern) :
+	RoughMaterial(_kd,_ks,_s), pattern(_pattern) {}
+	PatternedMaterial(Color c, const Pattern* _pattern) : RoughMaterial(c), pattern(_pattern) {}
 	
 	virtual Color get_kd(const Vector& pos) const {
 		return pattern->getPattern(pos,kd);
@@ -475,7 +474,7 @@ TwoColoredPattern STRIPES_TWO(&stripes, Color(.5,.1,.4));
 //kd from https://en.wikibooks.org/wiki/Blender_3D:_Noob_to_Pro/Every_Material_Known_to_Man/Gold
 const Material GOLD(Color(/*1,0.88,0.25*/), Color(), Color(0.17,0.35,1.5),Color(3.1,2.7,1.9),true,false,0);
 const Material GLASS(Color(), Color(), Color(1.5,1.5,1.5),Color(0,0,0),true,true,0);
-const PatternedMaterial SIMPLE(Color(.2,.5,.1), Color(0,0,0), Color(),Color(),false,false,0, &STRIPES_TWO);
+const PatternedMaterial SIMPLE(Color(.2,.5,.1), Color(0,0,0),0, &STRIPES_TWO);
 const PatternedMaterial SIMPLE2(Color(.7,.8,.5), &STRIPES_SHAD);
 
 
