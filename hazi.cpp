@@ -65,7 +65,7 @@
 const float EPSILON = 0.001;
 const float STEP_EPSILON = 0.001;
 const float L_SP = 1.0;
-const int MAX_DEPTH = 5;
+const int MAX_DEPTH = 10;
 const float T_MAX = 100;
 float GLOBAL_TIME = 0;
 
@@ -440,6 +440,14 @@ struct Material {
 	
 	virtual ~Material() {}
 	
+};
+
+struct RoughMaterial: public Material {
+	RoughMaterial(Color _kd, Color _ks = Color(), float _s = 0) : Material(_kd,_ks,Color(),Color(),false,false,_s) {}
+};
+
+struct SmoothMaterial: public Material {
+		SmoothMaterial (Color _n, Color _k, bool refr = false, bool refl = true): Material(Color(),Color(),_n,_k,refl,refr,0) {}
 };
 
 struct PatternedMaterial : public Material {
