@@ -366,10 +366,10 @@ struct TwoColoredPattern : public Pattern {
 struct Material {
 	Color kd ,ks;
 	Color n, F0; 
-	bool reflective,refractive;
+	bool rough,reflective,refractive;
 	float shin;
-	Material(Color _kd, Color _ks, Color _n, Color _k, bool refl, bool refr, float _s) :
-	 kd(_kd), ks(_ks), n(_n), reflective(refl), refractive(refr), shin(_s) {		
+	Material(Color _kd, Color _ks, float _s, Color _n, Color _k, bool _rough, bool refl, bool refr) :
+	 kd(_kd), ks(_ks), n(_n), rough(_rough), reflective(refl), refractive(refr), shin(_s) {		
 		this->F0 = (n - Color(1, 1, 1) * (n - Color(1, 1, 1)) + _k*_k) / ((n + Color(1, 1, 1))*(n + Color(1, 1, 1)) + _k*_k);
 	}
 	
@@ -431,11 +431,11 @@ struct Material {
 };
 
 struct RoughMaterial: public Material {
-	RoughMaterial(Color _kd, Color _ks = Color(), float _s = 0) : Material(_kd,_ks,Color(),Color(),false,false,_s) {}
+	RoughMaterial(Color _kd, Color _ks = Color(), float _s = 0) : Material(_kd,_ks,_s,Color(),Color(),true,false,false) {}
 };
 
 struct SmoothMaterial: public Material {
-		SmoothMaterial (Color _n, Color _k, bool refr = false, bool refl = true): Material(Color(),Color(),_n,_k,refl,refr,0) {}
+		SmoothMaterial (Color _n, Color _k, bool refr = false, bool refl = true): Material(Color(),Color(),0,_n,_k,false,refl,refr) {}
 };
 
 struct PatternedMaterial : public RoughMaterial {
@@ -664,7 +664,7 @@ struct Room {
 		Color outRadiance = AMBIENT_LIGHT * hit.material -> get_kd(hit.pos);
 		float time_elapsed = ray.shootTime - hit.t;
 		
-		if (!hit.material->reflective && !hit.material->refractive) { 
+		if (hit.material -> rough) { 
 			for (int i = 0; i< lightNumber; i++) {
 				Vector norm = hit.n;
 				Vector vIn = (ray.dir);
