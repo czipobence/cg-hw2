@@ -667,21 +667,22 @@ struct Room {
 		Color outRadiance = AMBIENT_LIGHT * hit.material -> get_kd(hit.pos);
 		float time_elapsed = ray.shootTime - hit.t;
 		
-		for (int i = 0; i< lightNumber; i++) {
-			Vector norm = hit.n;
-			Vector vIn = (ray.dir);
+		if (!hit.material->reflective && !hit.material->refractive) { 
+			for (int i = 0; i< lightNumber; i++) {
+				Vector norm = hit.n;
+				Vector vIn = (ray.dir);
+				
+				if ((vIn * norm) > 0) norm = norm * -1;
 			
-			if ((vIn * norm) > 0) norm = norm * -1;
-		
-			LightInfo li = lights[i]->getInfo(hit.pos, time_elapsed);
-			if (li.valid) {
-				Intersection shadowIntersection = getFirstInter(Ray(hit.pos + norm*STEP_EPSILON, li.dir, time_elapsed));
-				if (shadowIntersection.t <= 0 || shadowIntersection.t > li.time) {
-					outRadiance = outRadiance + hit.material->shade(norm,vIn * -1, hit.pos,li);
+				LightInfo li = lights[i]->getInfo(hit.pos, time_elapsed);
+				if (li.valid) {
+					Intersection shadowIntersection = getFirstInter(Ray(hit.pos + norm*STEP_EPSILON, li.dir, time_elapsed));
+					if (shadowIntersection.t <= 0 || shadowIntersection.t > li.time) {
+						outRadiance = outRadiance + hit.material->shade(norm,vIn * -1, hit.pos,li);
+					}
 				}
 			}
 		}
-		
 
 		if (hit.material->reflective) {
 			
