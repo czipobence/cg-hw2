@@ -471,9 +471,11 @@ Color stripes(const Vector & pos) {
 ShadowPattern STRIPES_SHAD(&stripes);
 TwoColoredPattern STRIPES_TWO(&stripes, Color(.5,.1,.4));
 
-//kd from https://en.wikibooks.org/wiki/Blender_3D:_Noob_to_Pro/Every_Material_Known_to_Man/Gold
-const Material GOLD(Color(/*1,0.88,0.25*/), Color(), Color(0.17,0.35,1.5),Color(3.1,2.7,1.9),true,false,0);
-const Material GLASS(Color(), Color(), Color(1.5,1.5,1.5),Color(0,0,0),true,true,0);
+
+const SmoothMaterial GOLD(Color(0.17,0.35,1.5),Color(3.1,2.7,1.9), false);
+//const Material GOLD(Color(/*1,0.88,0.25*/), Color(), Color(0.17,0.35,1.5),Color(3.1,2.7,1.9),true,false,0);
+const SmoothMaterial GLASS(Color(1.5,1.5,1.5),Color(0,0,0),true);
+//const Material GLASS(Color(), Color(), Color(1.5,1.5,1.5),Color(0,0,0),true,true,0);
 const PatternedMaterial SIMPLE(Color(.2,.5,.1), Color(0,0,0),0, &STRIPES_TWO);
 const PatternedMaterial SIMPLE2(Color(.7,.8,.5), &STRIPES_SHAD);
 
