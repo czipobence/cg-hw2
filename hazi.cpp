@@ -372,18 +372,6 @@ struct Material {
 	 kd(_kd), ks(_ks), n(_n), reflective(refl), refractive(refr), shin(_s) {		
 		this->F0 = (n - Color(1, 1, 1) * (n - Color(1, 1, 1)) + _k*_k) / ((n + Color(1, 1, 1))*(n + Color(1, 1, 1)) + _k*_k);
 	}
-	Material(Color c) {
-		*this = Material();
-		kd = c;
-	}
-	Material() {
-		kd = Color();
-		ks= Color();
-		n= Color();
-		F0 = Color();
-		reflective = refractive = false;
-		shin = 0;
-	}
 	
 	virtual Color get_kd(const Vector& pos) const {
 		return kd;
@@ -783,10 +771,10 @@ struct World {
 	
 		room.addObject( new Plane(&SIMPLE2,Vector(10,0,0),Vector(-1,0,0)));
 		//room.addObject( new Plane(&GLASS,Vector(10.1,0,0),Vector(1,0,0)));
-		room.addObject( new Plane(new Material(Color(.2,.4,.6)),Vector(10,0,-5),Vector(0,0,1)));
+		room.addObject( new Plane(new RoughMaterial(Color(.2,.4,.6)),Vector(10,0,-5),Vector(0,0,1)));
 		//room.addObject( new Plane(&SIMPLE2,Vector(10,0,5),Vector(0,0,-1)));
-		room.addObject( new Plane(new Material(Color(.6,.4,.2)),Vector(10,5,0),Vector(0,-1,0)));
-		room.addObject( new Plane(new Material(Color(.3,.3,.9)),Vector(10,-5,0),Vector(0,1,0)));
+		room.addObject( new Plane(new RoughMaterial(Color(.6,.4,.2)),Vector(10,5,0),Vector(0,-1,0)));
+		room.addObject( new Plane(new RoughMaterial(Color(.3,.3,.9)),Vector(10,-5,0),Vector(0,1,0)));
 		room.addObject( new Plane(&SIMPLE,Vector(0,0,0),Vector(1,0,0)));
 		
 		//room.addObject( new Plane(&GLASS, Vector(6,0,0), Vector(0,0,-1)));
