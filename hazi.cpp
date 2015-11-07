@@ -321,10 +321,10 @@ struct Intersection {
 
 struct Ray {
 	Vector p0, dir;
-	float shootTime, c;
-	Ray(Vector o, Vector d, float shoot_t, float _c = LIGHT_SPEED) : p0(o), dir(d.norm()), shootTime(shoot_t), c(_c) {}
+	float shootTime;
+	Ray(Vector o, Vector d, float shoot_t, float _c = LIGHT_SPEED) : p0(o), dir(d.norm()), shootTime(shoot_t) {}
 	Vector getVec(float t) const {
-		return p0 + dir *t * c;
+		return p0 + dir *t * LIGHT_SPEED;
 	}
 };
 
@@ -426,14 +426,6 @@ struct Material {
 		return F0 + (Color(1,1,1) - F0 ) * powf(1 - cosalfa ,5);
 	}
 	
-	float getPenetratingRaySpeed(const Ray& r) const {
-		if (LIGHT_SPEED - r.c < -EPSILON) {
-			return LIGHT_SPEED;
-		} else {
-			return LIGHT_SPEED / (n.r + n.g + n.b) * 3.0f;
-		}
-	}
-	
 	virtual ~Material() {}
 	
 };
@@ -494,8 +486,8 @@ struct Plane : public Object {
 	Intersection intersect(const Ray& ray) {
 		if (fabs(ray.dir * n) < EPSILON) return Intersection();
 		float intersection_param = ((p - ray.p0) * n)/(ray.dir * n);
-		if (intersection_param < 0) return Intersection();
-		return Intersection(ray.getVec(intersection_param),n,intersection_param,m);
+		if (intersection_param < -EPSILON) return Intersection();
+		return Intersection(ray.getVec(intersection_param),n,intersection_param / LIGHT_SPEED,m);
 	}
 };
 
@@ -517,7 +509,7 @@ struct QuadricShape : public Object {
 		
 		Intersection intersect(const Ray& ray) {
 			Vector r0 = ray.p0 - (vel * ray.shootTime);
-			Vector rd = (ray.dir * ray.c) + vel;
+			Vector rd = (ray.dir * LIGHT_SPEED) + vel;
 			
 			float x0 = r0.x;
 			float y0 = r0.y;
@@ -541,7 +533,7 @@ struct QuadricShape : public Object {
 			if (fabs(Av) < EPSILON) {
 				if (fabs(Bv) < EPSILON) return Intersection();
 				param = -Cv / Bv;
-				if (param < 0) {
+				if (param < -EPSILON) {
 					return Intersection();
 				}
 			} else {
@@ -656,7 +648,7 @@ struct Room {
 		closest.t = T_MAX;
 		for (int i = 0; i< objectNumber; i++) {
 			Intersection inter = objects[i]->intersect(r);
-			if (inter.real && inter.t < closest.t)
+			if (inter.real && (inter.t) < closest.t)
 				closest = inter;
 		}
 		return closest;
@@ -675,7 +667,7 @@ struct Room {
 			for (int i = 0; i< lightNumber; i++) {
 				LightInfo li = lights[i]->getInfo(hit.pos, time_elapsed);
 				if (li.valid) {
-					Intersection shadowIntersection = getFirstInter(Ray(hit.pos + nNorm*STEP_EPSILON, li.dir, time_elapsed, ray.c));
+					Intersection shadowIntersection = getFirstInter(Ray(hit.pos + nNorm*STEP_EPSILON, li.dir, time_elapsed));
 					if (shadowIntersection.t <= 0 || shadowIntersection.t > li.time) {
 						outRadiance = outRadiance + hit.material->shade(nNorm,ray.dir * -1, hit.pos,li);
 					}
@@ -686,11 +678,11 @@ struct Room {
 		Color fres = hit.material -> fresnel(nNorm,ray.dir);
 
 		if (hit.material->reflective) {
-			Ray reflectedRay = Ray (hit.pos + nNorm*STEP_EPSILON, hit.material -> reflect(nNorm,ray.dir),time_elapsed,ray.c);
+			Ray reflectedRay = Ray (hit.pos + nNorm*STEP_EPSILON, hit.material -> reflect(nNorm,ray.dir),time_elapsed);
 			outRadiance = outRadiance + (traceRay(reflectedRay, depth +1) * fres) ; 
 		}
 		if (hit.material->refractive) {
-			Ray refractedRay = Ray (hit.pos - nNorm*STEP_EPSILON, hit.material -> refract(hit.n,ray.dir), time_elapsed, hit.material -> getPenetratingRaySpeed(ray));
+			Ray refractedRay = Ray (hit.pos - nNorm*STEP_EPSILON, hit.material -> refract(hit.n,ray.dir), time_elapsed);
 			outRadiance = outRadiance + (traceRay(refractedRay, depth +1) * (Color(1,1,1) - fres)); 
 		}
 		return outRadiance;
