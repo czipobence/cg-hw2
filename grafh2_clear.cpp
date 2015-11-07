@@ -65,7 +65,7 @@
 const float EPSILON = 0.001f;
 const float STEP_EPSILON = 0.005f;
 const float LIGHT_SPEED = 1.0f;
-const int MAX_DEPTH = 7;
+const int MAX_DEPTH = 5;
 const float T_MAX = 100.0f;
 float GLOBAL_TIME = 0.0f;
 
@@ -869,7 +869,7 @@ void onKeyboard(unsigned char key, int x, int y) {
     if (key == ' ') {
 		if (!space_pressed) {
 			space_pressed = true;
-			GLOBAL_TIME = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
+			GLOBAL_TIME = 5;//glutGet(GLUT_ELAPSED_TIME) / 1000.0;
 			glutPostRedisplay( );
 		}
 	}
