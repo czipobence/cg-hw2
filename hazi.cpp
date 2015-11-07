@@ -246,7 +246,7 @@ struct Color {
    }
 };
 
-const Color AMBIENT_LIGHT(.7,.7,.7);
+const Color AMBIENT_LIGHT(.2,.2,.2);
 
 struct LightInfo {
 	Vector dir;
@@ -677,11 +677,6 @@ struct Room {
 		}
 
 		if (hit.material->reflective) {
-			
-			//Vector norm = hit.n;
-			
-			//if ((ray.dir * norm) > 0) norm = norm * -1;
-			
 			Color fres = hit.material -> fresnel(nNorm,ray.dir);
 			Vector vOut = hit.material -> reflect(nNorm,ray.dir);
 			
@@ -778,7 +773,7 @@ struct World {
 		room.addObject(new Ellipsoid(&GLASS, Vector(5,0,0), Vector(.25,.25,1), Vector(1,0,.2), Vector(-0.4,.4,.4)));
 		room.addObject(new Paraboloid(&GOLD, Vector(5,0,7.5), Vector(5,0,-2.5) ,Vector(0,0,1)));
 		
-		room.addLight( new PointLight(Vector(3,4,-2), Vector(.4,0,.4), Color(1,1,1), 20));	
+		room.addLight( new PointLight(Vector(3,0,-2), Vector(.4,0,.4), Color(1,1,1), 60));	
 		
 	}
 	
