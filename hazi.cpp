@@ -430,6 +430,14 @@ struct Material {
 		return F0 + (Color(1,1,1) - F0 ) * powf(1 - cosalfa ,5);
 	}
 	
+	float getPenetratingRaySpeed(const Ray& r) const {
+		if (LIGHT_SPEED - r.c < -EPSILON) {
+			return LIGHT_SPEED;
+		} else {
+			return LIGHT_SPEED / (n.r + n.g + n.b) * 3.0f;
+		}
+	}
+	
 	virtual ~Material() {}
 	
 };
@@ -686,7 +694,7 @@ struct Room {
 			outRadiance = outRadiance + (traceRay(reflectedRay, depth +1) * fres) ; 
 		}
 		if (hit.material->refractive) {
-			Ray refractedRay = Ray (hit.pos - nNorm*STEP_EPSILON, hit.material -> refract(hit.n,ray.dir), time_elapsed, (ray.c - LIGHT_SPEED) < EPSILON ? ray.c / hit.material -> n.r : LIGHT_SPEED);
+			Ray refractedRay = Ray (hit.pos - nNorm*STEP_EPSILON, hit.material -> refract(hit.n,ray.dir), time_elapsed, hit.material -> getPenetratingRaySpeed(ray));
 			outRadiance = outRadiance + (traceRay(refractedRay, depth +1) * (Color(1,1,1) - fres)); 
 		}
 		return outRadiance;
