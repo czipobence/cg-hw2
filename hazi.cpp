@@ -62,8 +62,8 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Innentol modosithatod...
 
-const float EPSILON = 0.002f;
-const float STEP_EPSILON = 0.03f;
+const float EPSILON = 0.001f;
+const float STEP_EPSILON = 0.005f;
 const float LIGHT_SPEED = 1.0f;
 const int MAX_DEPTH = 10;
 const float T_MAX = 100.0f;
@@ -249,7 +249,7 @@ struct Color {
    }
 };
 
-const Color AMBIENT_LIGHT(.7,.7,.7);
+const Color AMBIENT_LIGHT(.4,.4,.4);
 
 struct LightInfo {
 	Vector dir;
@@ -808,8 +808,8 @@ struct World {
 	Room room;
 	
 	World() {
-		//cam = Camera(Vector(.1,0,0), Vector(1,0,0), Vector(0,1,0));
-		GLOBAL_TIME = 10;
+		cam = Camera(Vector(.1,-4.5,0), Vector(0.6,.3,0.4), Vector(0,1,0));
+		GLOBAL_TIME = 4.52;
 	
 		room.addObject( new Plane(&WALL2,Vector(10,0,0),Vector(-1,0,0)));
 		room.addObject( new Plane(&WALL3,Vector(10,0,-5),Vector(0,0,1)));
@@ -817,10 +817,11 @@ struct World {
 		room.addObject( new Plane(&FLOOR,Vector(10,-5,0),Vector(0,1,0)));
 		room.addObject( new Plane(&WALL1,Vector(0,0,0),Vector(1,0,0)));
 		
-		room.addObject(new Ellipsoid(&GLASS, Vector(5,0,0), Vector(.25,.25,1), Vector(1,0,.2), Vector(-0.4,.4,.4)));
+		room.addObject(new Ellipsoid(&GLASS, Vector(1.5,-3.5,3), Vector(.25,.25,1), Vector(1,0,.2), Vector(0.2236,0.2,-0.4)));
+		//room.addObject(new Ellipsoid(&GLASS, Vector(0,-5,5), Vector(.25,.25,1), Vector(1,0,.2), Vector(0.2236,0.2,-0.4)));
 		room.addObject(new Paraboloid(&GOLD, Vector(5,0,7.5), Vector(5,0,-2.5) ,Vector(0,0,1)));
 		
-		room.addLight( new PointLight(Vector(3,4,-2), Vector(.4,0,.4), Color(1,1,1), 20));	
+		room.addLight( new PointLight(Vector(6.5,3,1.5), Vector(.4,-0.1,.4), Color(1,1,1), 60));	
 		
 	}
 	
@@ -837,8 +838,8 @@ struct World {
 
 World world;
 
-Vector camPos = Vector(.5,-4.5,-4.5);
-Vector camFwd = Vector(1,1,1);
+Vector camPos = Vector(.1,-4.5,1);
+Vector camFwd = Vector(0.6,.3,0.3);
 Vector camUp = Vector(0,1,0);
 
 // Inicializacio, a program futasanak kezdeten, az OpenGL kontextus letrehozasa utan hivodik meg (ld. main() fv.)
@@ -937,10 +938,6 @@ void onIdle( ) {
      		// program inditasa ota eltelt ido
 
 }
-
-/**
- * TODO Tone mapping
- **/
 
 // ...Idaig modosithatod
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
