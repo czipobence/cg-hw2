@@ -515,20 +515,25 @@ Color chequered(const Vector& pos) {
 		
 }
 
-ShadowPattern STRIPES_SHAD(&circles);
-TwoColoredPattern STRIPES_TWO(&stripes, Color(.5,.1,.4));
-ShadowPattern CIRCLES_SHAD(&circles);
-TwoColoredPattern CHEQUERED(&chequered, Color(0,1,1));
-CCPattern CIRC(Vector(10,5,5), Color(.7,.5,.3), 6);
-MagPattern MG(Vector(5,0,-5), Color(.15, .3, .45),1, Vector(1,1,0));
 
 const SmoothMaterial GOLD(Color(0.17,0.35,1.5),Color(3.1,2.7,1.9), false);
+
 const SmoothMaterial GLASS(Color(1.5,1.5,1.5),Color(0,0,0),true);
+
+TwoColoredPattern STRIPES_TWO(&stripes, Color(.5,.1,.4));
 const PatternedMaterial WALL1(Color(.2,.5,.1), Color(0,0,0),0, &STRIPES_TWO);
-const PatternedMaterial WALL2(Color(.7,.8,.5), &STRIPES_SHAD);
-const PatternedMaterial FLOOR(Color(.3,.5,.7), &CHEQUERED);
-const PatternedMaterial CEIL(Color(.6,.4,.2),&CIRC);
+
+ShadowPattern CIRCLES_SHAD(&circles);
+const PatternedMaterial WALL2(Color(.7,.8,.5), &CIRCLES_SHAD);
+
+MagPattern MG(Vector(5,0,-5), Color(.15, .3, .45),1, Vector(1,1,0));
 const PatternedMaterial WALL3(Color(.2,.4,.6), &MG);
+
+TwoColoredPattern CHEQUERED(&chequered, Color(0,1,1));
+const PatternedMaterial FLOOR(Color(.3,.5,.7), &CHEQUERED);
+
+CCPattern CIRC(Vector(10,5,5), Color(.7,.5,.3), 6);
+const PatternedMaterial CEIL(Color(.6,.4,.2),&CIRC);
 
 struct Object {
 	const Material *m;
