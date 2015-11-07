@@ -661,18 +661,16 @@ struct Room {
 		if (! hit.real || hit.material == NULL || hit.t <= 0) return Color();
 		Color outRadiance = AMBIENT_LIGHT * hit.material -> get_kd(hit.pos);
 		float time_elapsed = ray.shootTime - hit.t;
+		Vector nNorm = (ray.dir * hit.n > 0) ? hit.n * -1 : hit.n;
 		
 		if (hit.material -> rough) { 
 			for (int i = 0; i< lightNumber; i++) {
-				Vector norm = hit.n;
-				
-				if ((ray.dir * norm) > 0) norm = norm * -1;
 			
 				LightInfo li = lights[i]->getInfo(hit.pos, time_elapsed);
 				if (li.valid) {
-					Intersection shadowIntersection = getFirstInter(Ray(hit.pos + norm*STEP_EPSILON, li.dir, time_elapsed));
+					Intersection shadowIntersection = getFirstInter(Ray(hit.pos + nNorm*STEP_EPSILON, li.dir, time_elapsed));
 					if (shadowIntersection.t <= 0 || shadowIntersection.t > li.time) {
-						outRadiance = outRadiance + hit.material->shade(norm,ray.dir * -1, hit.pos,li);
+						outRadiance = outRadiance + hit.material->shade(nNorm,ray.dir * -1, hit.pos,li);
 					}
 				}
 			}
@@ -680,14 +678,14 @@ struct Room {
 
 		if (hit.material->reflective) {
 			
-			Vector norm = hit.n;
+			//Vector norm = hit.n;
 			
-			if ((ray.dir * norm) > 0) norm = norm * -1;
+			//if ((ray.dir * norm) > 0) norm = norm * -1;
 			
-			Color fres = hit.material -> fresnel(norm,ray.dir);
-			Vector vOut = hit.material -> reflect(norm,ray.dir);
+			Color fres = hit.material -> fresnel(nNorm,ray.dir);
+			Vector vOut = hit.material -> reflect(nNorm,ray.dir);
 			
-			Ray reflectedRay = Ray (hit.pos + norm*STEP_EPSILON, vOut,time_elapsed);
+			Ray reflectedRay = Ray (hit.pos + nNorm*STEP_EPSILON, vOut,time_elapsed);
 			
 			Color l_in = traceRay(reflectedRay, depth +1);
 			
@@ -699,13 +697,8 @@ struct Room {
 			//std::cout << outRadiance.r << " " << outRadiance.g << " " << outRadiance.b << std::endl << std::endl; 
 		}
 		if (hit.material->refractive) {
-			
-			Vector norm = hit.n;
-			Vector nNorm = (ray.dir * norm > 0) ? norm * -1 : norm;
-			
 			Color fres = hit.material -> fresnel(nNorm ,ray.dir);
-			
-			Ray refractedRay = Ray (hit.pos - nNorm*STEP_EPSILON, hit.material -> refract(norm,ray.dir), time_elapsed);
+			Ray refractedRay = Ray (hit.pos - nNorm*STEP_EPSILON, hit.material -> refract(hit.n,ray.dir), time_elapsed);
 			outRadiance = outRadiance + traceRay(refractedRay, depth +1) * (Color(1,1,1) - fres); 
 		}
 		return outRadiance;
