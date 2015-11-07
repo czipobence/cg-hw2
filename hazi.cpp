@@ -809,22 +809,13 @@ struct World {
 	
 	World() {
 		//cam = Camera(Vector(.1,0,0), Vector(1,0,0), Vector(0,1,0));
-		//screen = Screen();
-		//room = Room();
-	
 		GLOBAL_TIME = 10;
 	
 		room.addObject( new Plane(&WALL2,Vector(10,0,0),Vector(-1,0,0)));
-		//room.addObject( new Plane(&GLASS,Vector(10.1,0,0),Vector(1,0,0)));
 		room.addObject( new Plane(&WALL3,Vector(10,0,-5),Vector(0,0,1)));
-		//room.addObject( new Plane(&SIMPLE2,Vector(10,0,5),Vector(0,0,-1)));
 		room.addObject( new Plane(&CEIL,Vector(10,5,0),Vector(0,-1,0)));
 		room.addObject( new Plane(&FLOOR,Vector(10,-5,0),Vector(0,1,0)));
 		room.addObject( new Plane(&WALL1,Vector(0,0,0),Vector(1,0,0)));
-		
-		//room.addObject( new Plane(&GLASS, Vector(6,0,0), Vector(0,0,-1)));
-		//room.addObject( new Plane(&GLASS, Vector(5,0,0.01), Vector(0,0,-1)));
-		
 		
 		room.addObject(new Ellipsoid(&GLASS, Vector(5,0,0), Vector(.25,.25,1), Vector(1,0,.2), Vector(-0.4,.4,.4)));
 		room.addObject(new Paraboloid(&GOLD, Vector(5,0,7.5), Vector(5,0,-2.5) ,Vector(0,0,1)));
