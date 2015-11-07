@@ -62,12 +62,13 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Innentol modosithatod...
 
-const float EPSILON = 0.001;
-const float STEP_EPSILON = 0.01;
-const float L_SP = 1.0;
+const float EPSILON = 0.001f;
+const float STEP_EPSILON = 0.01f;
+//const float L_SP = 1.0f;
+const float LIGHT_SPEED = 1.0f;
 const int MAX_DEPTH = 10;
-const float T_MAX = 100;
-float GLOBAL_TIME = 0;
+const float T_MAX = 100.0f;
+float GLOBAL_TIME = 0.0f;
 
 //--------------------------------------------------------
 // 3D Vektor
@@ -284,14 +285,14 @@ struct PointLight: public Light {
 	LightInfo getInfo(Vector intPos, float time_elapsed) {
 		Vector d = getPos(time_elapsed) - intPos;
 		
-		float disc = 4 * (vel * d) * (vel *d) - (d *d) * (vel * vel) + (d*d) + L_SP * L_SP;
+		float disc = 4 * (vel * d) * (vel *d) - (d *d) * (vel * vel) + (d*d) + LIGHT_SPEED * LIGHT_SPEED;
 		if (disc < 0) {
 			std::cout << "Nincs metszés???" << std::endl;
 			return LightInfo();
 		}
 		disc = sqrtf(disc);
-		float t1 = (vel * d * 2.0 + disc) / 2.0 / (vel * vel - L_SP * L_SP);
-		float t2 = (vel * d * 2.0 - disc) / 2.0 / (vel * vel - L_SP * L_SP);
+		float t1 = (vel * d * 2.0 + disc) / 2.0 / (vel * vel - LIGHT_SPEED * LIGHT_SPEED);
+		float t2 = (vel * d * 2.0 - disc) / 2.0 / (vel * vel - LIGHT_SPEED * LIGHT_SPEED);
 		
 		float collTime;
 		if (t1 > 0) {
@@ -322,10 +323,10 @@ struct Intersection {
 
 struct Ray {
 	Vector p0, dir;
-	float shootTime;
-	Ray(Vector o, Vector d, float shoot_t) : p0(o), dir(d.norm()), shootTime(shoot_t) {}
+	float shootTime, c;
+	Ray(Vector o, Vector d, float shoot_t, float _c = LIGHT_SPEED) : p0(o), dir(d.norm()), shootTime(shoot_t), c(_c) {}
 	Vector getVec(float t) const {
-		return p0 + dir *t * L_SP;
+		return p0 + dir *t * c;
 	}
 };
 
@@ -512,7 +513,7 @@ struct QuadricShape : public Object {
 		
 		Intersection intersect(const Ray& ray) {
 			Vector r0 = ray.p0 - (vel * ray.shootTime);
-			Vector rd = (ray.dir * L_SP) + vel;
+			Vector rd = (ray.dir * ray.c) + vel;
 			
 			float x0 = r0.x;
 			float y0 = r0.y;
@@ -670,7 +671,7 @@ struct Room {
 			for (int i = 0; i< lightNumber; i++) {
 				LightInfo li = lights[i]->getInfo(hit.pos, time_elapsed);
 				if (li.valid) {
-					Intersection shadowIntersection = getFirstInter(Ray(hit.pos + nNorm*STEP_EPSILON, li.dir, time_elapsed));
+					Intersection shadowIntersection = getFirstInter(Ray(hit.pos + nNorm*STEP_EPSILON, li.dir, time_elapsed, ray.c));
 					if (shadowIntersection.t <= 0 || shadowIntersection.t > li.time) {
 						outRadiance = outRadiance + hit.material->shade(nNorm,ray.dir * -1, hit.pos,li);
 					}
@@ -681,11 +682,11 @@ struct Room {
 		Color fres = hit.material -> fresnel(nNorm,ray.dir);
 
 		if (hit.material->reflective) {
-			Ray reflectedRay = Ray (hit.pos + nNorm*STEP_EPSILON, hit.material -> reflect(nNorm,ray.dir),time_elapsed);
+			Ray reflectedRay = Ray (hit.pos + nNorm*STEP_EPSILON, hit.material -> reflect(nNorm,ray.dir),time_elapsed,ray.c);
 			outRadiance = outRadiance + (traceRay(reflectedRay, depth +1) * fres) ; 
 		}
 		if (hit.material->refractive) {
-			Ray refractedRay = Ray (hit.pos - nNorm*STEP_EPSILON, hit.material -> refract(hit.n,ray.dir), time_elapsed);
+			Ray refractedRay = Ray (hit.pos - nNorm*STEP_EPSILON, hit.material -> refract(hit.n,ray.dir), time_elapsed, (ray.c - LIGHT_SPEED) < EPSILON ? ray.c / hit.material -> n.r : LIGHT_SPEED);
 			outRadiance = outRadiance + (traceRay(refractedRay, depth +1) * (Color(1,1,1) - fres)); 
 		}
 		return outRadiance;
