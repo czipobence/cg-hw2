@@ -62,8 +62,8 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Innentol modosithatod...
 
-const float EPSILON = 0.001f;
-const float STEP_EPSILON = 0.01f;
+const float EPSILON = 0.002f;
+const float STEP_EPSILON = 0.03f;
 const float LIGHT_SPEED = 1.0f;
 const int MAX_DEPTH = 10;
 const float T_MAX = 100.0f;
@@ -365,6 +365,50 @@ struct TwoColoredPattern : public Pattern {
 
 };
 
+
+struct CCPattern: public Pattern {
+	Vector mid;
+	Color sec;
+	float param;
+	
+	CCPattern(Vector _m, Color _s, float _p): mid(_m), sec(_s), param(_p) {}
+	
+	virtual Color getPattern(const Vector& pos, const Color& col) const {
+		Vector diff = pos - mid;
+		
+		float r = diff.x * diff.x + diff.y * diff.y + diff.z * diff.z;
+		
+		return ((int) (r / param ) ) % 2 == 0 ? col : sec;
+		
+	}
+};
+
+struct MagPattern: public Pattern {
+	Vector mid;
+	Color sec;
+	float param;
+	Vector dir;
+	
+	MagPattern(Vector _m, Color _s, float _p,  const Vector& _d): mid(_m), sec(_s), param(_p), dir(_d) {}
+	
+	virtual Color getPattern(const Vector& pos, const Color& col) const {
+		Vector diff = pos - mid;
+		Vector diff1 = diff;
+		if (dir.x == 0) diff1.x = 1;
+		if (dir.y == 0) diff1.y = 1;
+		if (dir.z == 0) diff1.z = 1;
+		
+		diff = diff * param;
+		diff1 = diff1 * param;
+		
+		float k1 = sin(diff.x * diff.x + diff.y * diff.y + diff.z * diff.z);
+		float k2 = cos(diff1.x * diff1.y * diff1.z); 
+		
+		return k1 < k2 ? col : sec;
+		
+	}
+};
+
 struct Material {
 	Color kd ,ks;
 	Color n, F0; 
@@ -456,17 +500,35 @@ Color stripes(const Vector & pos) {
 		return Color(magic,magic,magic);
 }
 
-ShadowPattern STRIPES_SHAD(&stripes);
-TwoColoredPattern STRIPES_TWO(&stripes, Color(.5,.1,.4));
+Color circles(const Vector& pos) {
+		float x = (((int) (1000 * fabs(pos.x))) % 1000) / 1000.0 - 0.5;
+		float y = (((int) (1000 * fabs(pos.y))) % 1000) / 1000.0 - 0.5;
+		float z = (((int) (1000 * fabs(pos.z))) % 1000) / 1000.0 - 0.5;
+		return (x*x + y*y+z*z < .4 ? Color(1,1,1) : Color(0,0,0));
+}
 
+Color chequered(const Vector& pos) {
+		int x = ((int) pos.x ) % 2;
+		int y = ((int) (pos.y + 5 )) % 2;
+		int z = ((int) (pos.z + 5)) % 2;
+		return ((x+y+z) % 2 == 0) ? Color(1,1,1) : Color(0,0,0);
+		
+}
+
+ShadowPattern STRIPES_SHAD(&circles);
+TwoColoredPattern STRIPES_TWO(&stripes, Color(.5,.1,.4));
+ShadowPattern CIRCLES_SHAD(&circles);
+TwoColoredPattern CHEQUERED(&chequered, Color(0,1,1));
+CCPattern CIRC(Vector(10,5,5), Color(.7,.5,.3), 6);
+MagPattern MG(Vector(5,0,-5), Color(.15, .3, .45),1, Vector(1,1,0));
 
 const SmoothMaterial GOLD(Color(0.17,0.35,1.5),Color(3.1,2.7,1.9), false);
-//const Material GOLD(Color(/*1,0.88,0.25*/), Color(), Color(0.17,0.35,1.5),Color(3.1,2.7,1.9),true,false,0);
 const SmoothMaterial GLASS(Color(1.5,1.5,1.5),Color(0,0,0),true);
-//const Material GLASS(Color(), Color(), Color(1.5,1.5,1.5),Color(0,0,0),true,true,0);
-const PatternedMaterial SIMPLE(Color(.2,.5,.1), Color(0,0,0),0, &STRIPES_TWO);
-const PatternedMaterial SIMPLE2(Color(.7,.8,.5), &STRIPES_SHAD);
-
+const PatternedMaterial WALL1(Color(.2,.5,.1), Color(0,0,0),0, &STRIPES_TWO);
+const PatternedMaterial WALL2(Color(.7,.8,.5), &STRIPES_SHAD);
+const PatternedMaterial FLOOR(Color(.3,.5,.7), &CHEQUERED);
+const PatternedMaterial CEIL(Color(.6,.4,.2),&CIRC);
+const PatternedMaterial WALL3(Color(.2,.4,.6), &MG);
 
 struct Object {
 	const Material *m;
@@ -747,13 +809,13 @@ struct World {
 	
 		GLOBAL_TIME = 10;
 	
-		room.addObject( new Plane(&SIMPLE2,Vector(10,0,0),Vector(-1,0,0)));
+		room.addObject( new Plane(&WALL2,Vector(10,0,0),Vector(-1,0,0)));
 		//room.addObject( new Plane(&GLASS,Vector(10.1,0,0),Vector(1,0,0)));
-		room.addObject( new Plane(new RoughMaterial(Color(.2,.4,.6)),Vector(10,0,-5),Vector(0,0,1)));
+		room.addObject( new Plane(&WALL3,Vector(10,0,-5),Vector(0,0,1)));
 		//room.addObject( new Plane(&SIMPLE2,Vector(10,0,5),Vector(0,0,-1)));
-		room.addObject( new Plane(new RoughMaterial(Color(.6,.4,.2)),Vector(10,5,0),Vector(0,-1,0)));
-		room.addObject( new Plane(new RoughMaterial(Color(.3,.3,.9)),Vector(10,-5,0),Vector(0,1,0)));
-		room.addObject( new Plane(&SIMPLE,Vector(0,0,0),Vector(1,0,0)));
+		room.addObject( new Plane(&CEIL,Vector(10,5,0),Vector(0,-1,0)));
+		room.addObject( new Plane(&FLOOR,Vector(10,-5,0),Vector(0,1,0)));
+		room.addObject( new Plane(&WALL1,Vector(0,0,0),Vector(1,0,0)));
 		
 		//room.addObject( new Plane(&GLASS, Vector(6,0,0), Vector(0,0,-1)));
 		//room.addObject( new Plane(&GLASS, Vector(5,0,0.01), Vector(0,0,-1)));
