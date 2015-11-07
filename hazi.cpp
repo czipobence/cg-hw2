@@ -244,6 +244,9 @@ struct Color {
    Color operator-(const Color& c) const {
  	return Color(r - c.r, g - c.g, b - c.b); 
    }
+   Color saturate() const {
+	return Color(r > 1 ? 1 : r, g > 1 ? 1 : g, b>1 ? 1 : b);
+   }
 };
 
 const Color AMBIENT_LIGHT(.7,.7,.7);
@@ -772,7 +775,7 @@ struct World {
 		glViewport(0, 0, screen.WIDTH, screen.HEIGHT);
 		for(int Y = 0; Y < screen.HEIGHT; Y++)
 			for(int X = 0; X < screen.WIDTH; X++) {
-				screen.image[Y*screen.WIDTH + X] = room.traceRay(cam.getRay(X,Y));
+				screen.image[Y*screen.WIDTH + X] = room.traceRay(cam.getRay(X,Y)).saturate();
 		}
 	}
 };
@@ -881,9 +884,6 @@ void onIdle( ) {
 }
 
 /**
- * TODO Az üveg reflektív és refraktív egyszerre? 
- * TODO Az arany kd-jével hanyadán állunk?
- * TODO Ellipszoid árnyékot vet-e?
  * TODO Tone mapping
  **/
 
