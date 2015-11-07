@@ -246,7 +246,7 @@ struct Color {
    }
 };
 
-const Color AMBIENT_LIGHT(.2,.2,.2);
+const Color AMBIENT_LIGHT(.7,.7,.7);
 
 struct LightInfo {
 	Vector dir;
@@ -675,24 +675,22 @@ struct Room {
 				}
 			}
 		}
+		
+		Color fres = hit.material -> fresnel(nNorm,ray.dir);
 
 		if (hit.material->reflective) {
-			Color fres = hit.material -> fresnel(nNorm,ray.dir);
 			Vector vOut = hit.material -> reflect(nNorm,ray.dir);
 			
 			Ray reflectedRay = Ray (hit.pos + nNorm*STEP_EPSILON, vOut,time_elapsed);
-			
-			Color l_in = traceRay(reflectedRay, depth +1);
 			
 			
 			//std::cout << fres.r << " " << fres.g << " " << fres.b << std::endl; 
 			//std::cout << l_in.r << " " << l_in.g << " " << l_in.b << std::endl; 
 			
-			outRadiance = outRadiance + (l_in * fres) ; 
+			outRadiance = outRadiance + (traceRay(reflectedRay, depth +1) * fres) ; 
 			//std::cout << outRadiance.r << " " << outRadiance.g << " " << outRadiance.b << std::endl << std::endl; 
 		}
 		if (hit.material->refractive) {
-			Color fres = hit.material -> fresnel(nNorm ,ray.dir);
 			Ray refractedRay = Ray (hit.pos - nNorm*STEP_EPSILON, hit.material -> refract(hit.n,ray.dir), time_elapsed);
 			outRadiance = outRadiance + traceRay(refractedRay, depth +1) * (Color(1,1,1) - fres); 
 		}
@@ -773,7 +771,7 @@ struct World {
 		room.addObject(new Ellipsoid(&GLASS, Vector(5,0,0), Vector(.25,.25,1), Vector(1,0,.2), Vector(-0.4,.4,.4)));
 		room.addObject(new Paraboloid(&GOLD, Vector(5,0,7.5), Vector(5,0,-2.5) ,Vector(0,0,1)));
 		
-		room.addLight( new PointLight(Vector(3,0,-2), Vector(.4,0,.4), Color(1,1,1), 60));	
+		room.addLight( new PointLight(Vector(3,4,-2), Vector(.4,0,.4), Color(1,1,1), 20));	
 		
 	}
 	
