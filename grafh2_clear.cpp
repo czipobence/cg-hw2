@@ -809,8 +809,14 @@ struct World {
 	
 	World() {
 		cam = Camera(Vector(.1,-4.5,0), Vector(0.6,.3,0.4), Vector(0,1,0));
-		GLOBAL_TIME = 4.52;
+	}
 	
+	void init() {
+		
+		for(int Y = 0; Y < screen.HEIGHT; Y++)
+			for(int X = 0; X < screen.WIDTH; X++)
+				screen.image[Y*screen.WIDTH + X] = AMBIENT_LIGHT;
+		
 		room.addObject( new Plane(&WALL2,Vector(10,0,0),Vector(-1,0,0)));
 		room.addObject( new Plane(&WALL3,Vector(10,0,-5),Vector(0,0,1)));
 		room.addObject( new Plane(&CEIL,Vector(10,5,0),Vector(0,-1,0)));
@@ -818,7 +824,6 @@ struct World {
 		room.addObject( new Plane(&WALL1,Vector(0,0,0),Vector(1,0,0)));
 		
 		room.addObject(new Ellipsoid(&GLASS, Vector(1.5,-3.5,3), Vector(.25,.25,1), Vector(1,0,.2), Vector(0.2236,0.2,-0.4)));
-		//room.addObject(new Ellipsoid(&GLASS, Vector(0,-5,5), Vector(.25,.25,1), Vector(1,0,.2), Vector(0.2236,0.2,-0.4)));
 		room.addObject(new Paraboloid(&GOLD, Vector(5,0,7.5), Vector(5,0,-2.5) ,Vector(0,0,1)));
 		
 		room.addLight( new PointLight(Vector(6.5,3,1.5), Vector(.4,-0.1,.4), Color(1,1,1), 60));	
@@ -837,13 +842,12 @@ struct World {
 };
 
 World world;
+bool space_pressed = false;
 
 
 // Inicializacio, a program futasanak kezdeten, az OpenGL kontextus letrehozasa utan hivodik meg (ld. main() fv.)
 void onInitialization( ) { 
-	
-	
-
+	world.init();
 }
 
 // Rajzolas, ha az alkalmazas ablak ervenytelenne valik, akkor ez a fuggveny hivodik meg
@@ -851,8 +855,9 @@ void onDisplay( ) {
     glClearColor(0.1f, 0.2f, 0.3f, 1.0f);		// torlesi szin beallitasa
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // kepernyo torles
 
-	world.cam = Camera(camPos,camFwd,camUp);
-	world.render();
+	if (space_pressed) {
+		world.render();
+	}
 	world.draw();
 
     glutSwapBuffers();     				// Buffercsere: rajzolas vege
@@ -862,8 +867,11 @@ void onDisplay( ) {
 // Billentyuzet esemenyeket lekezelo fuggveny (lenyomas)
 void onKeyboard(unsigned char key, int x, int y) {
     if (key == ' ') {
-		GLOBAL_TIME = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
-		glutPostRedisplay( );
+		if (!space_pressed) {
+			space_pressed = true;
+			GLOBAL_TIME = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
+			glutPostRedisplay( );
+		}
 	}
 }
 
