@@ -64,7 +64,6 @@
 
 const float EPSILON = 0.001f;
 const float STEP_EPSILON = 0.01f;
-//const float L_SP = 1.0f;
 const float LIGHT_SPEED = 1.0f;
 const int MAX_DEPTH = 10;
 const float T_MAX = 100.0f;
@@ -287,7 +286,6 @@ struct PointLight: public Light {
 		
 		float disc = 4 * (vel * d) * (vel *d) - (d *d) * (vel * vel) + (d*d) + LIGHT_SPEED * LIGHT_SPEED;
 		if (disc < 0) {
-			std::cout << "Nincs metszés???" << std::endl;
 			return LightInfo();
 		}
 		disc = sqrtf(disc);
@@ -415,12 +413,10 @@ struct Material {
 			cosalpha *= -1;
 			norm = normal * -1;
 			rn = 1.0/rn;
-			//std::cout << "HAPPENED" << rn << std::endl;
-		
 		}
 		
 		float disc = 1 - (1 - cosalpha * cosalpha) / rn /rn;
-		if (disc < 0) { return reflect(norm,viewIn); std::cout << "??"; }
+		if (disc < 0) return reflect(norm,viewIn);
 		return (viewIn / rn + norm * (cosalpha / rn - sqrt(disc))).norm();
 		
 	}
