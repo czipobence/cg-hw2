@@ -665,7 +665,6 @@ struct Room {
 		
 		if (hit.material -> rough) { 
 			for (int i = 0; i< lightNumber; i++) {
-			
 				LightInfo li = lights[i]->getInfo(hit.pos, time_elapsed);
 				if (li.valid) {
 					Intersection shadowIntersection = getFirstInter(Ray(hit.pos + nNorm*STEP_EPSILON, li.dir, time_elapsed));
@@ -679,20 +678,12 @@ struct Room {
 		Color fres = hit.material -> fresnel(nNorm,ray.dir);
 
 		if (hit.material->reflective) {
-			Vector vOut = hit.material -> reflect(nNorm,ray.dir);
-			
-			Ray reflectedRay = Ray (hit.pos + nNorm*STEP_EPSILON, vOut,time_elapsed);
-			
-			
-			//std::cout << fres.r << " " << fres.g << " " << fres.b << std::endl; 
-			//std::cout << l_in.r << " " << l_in.g << " " << l_in.b << std::endl; 
-			
+			Ray reflectedRay = Ray (hit.pos + nNorm*STEP_EPSILON, hit.material -> reflect(nNorm,ray.dir),time_elapsed);
 			outRadiance = outRadiance + (traceRay(reflectedRay, depth +1) * fres) ; 
-			//std::cout << outRadiance.r << " " << outRadiance.g << " " << outRadiance.b << std::endl << std::endl; 
 		}
 		if (hit.material->refractive) {
 			Ray refractedRay = Ray (hit.pos - nNorm*STEP_EPSILON, hit.material -> refract(hit.n,ray.dir), time_elapsed);
-			outRadiance = outRadiance + traceRay(refractedRay, depth +1) * (Color(1,1,1) - fres); 
+			outRadiance = outRadiance + (traceRay(refractedRay, depth +1) * (Color(1,1,1) - fres)); 
 		}
 		return outRadiance;
 	}
@@ -839,7 +830,6 @@ void onKeyboard(unsigned char key, int x, int y) {
 	}
 	if (key == 'r') {
 		camPos = camPos + world.cam.up * UNIT;
-		camPos.x += UNIT;
 		glutPostRedisplay( );
 	}
 	if (key == 'f') {
