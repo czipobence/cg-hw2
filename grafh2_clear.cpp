@@ -62,12 +62,12 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Innentol modosithatod...
 
-const float EPSILON = 0.001;
-const float STEP_EPSILON = 0.001;
-const float L_SP = 1.0;
-const int MAX_DEPTH = 5;
-const float T_MAX = 100;
-float GLOBAL_TIME = 0;
+const float EPSILON = 0.001f;
+const float STEP_EPSILON = 0.005f;
+const float LIGHT_SPEED = 1.0f;
+const int MAX_DEPTH = 7;
+const float T_MAX = 100.0f;
+float GLOBAL_TIME = 0.0f;
 
 //--------------------------------------------------------
 // 3D Vektor
@@ -244,9 +244,12 @@ struct Color {
    Color operator-(const Color& c) const {
  	return Color(r - c.r, g - c.g, b - c.b); 
    }
+   Color saturate() const {
+	return Color(r > 1 ? 1 : r, g > 1 ? 1 : g, b>1 ? 1 : b);
+   }
 };
 
-const Color AMBIENT_LIGHT(.7,.7,.7);
+const Color AMBIENT_LIGHT(.4,.4,.4);
 
 struct LightInfo {
 	Vector dir;
@@ -281,13 +284,13 @@ struct PointLight: public Light {
 	LightInfo getInfo(Vector intPos, float time_elapsed) {
 		Vector d = getPos(time_elapsed) - intPos;
 		
-		float disc = 4 * (vel * d) * (vel *d) - (d *d) * (vel * vel) + (d*d) + L_SP * L_SP;
+		float disc = 4 * (vel * d) * (vel *d) - (d *d) * (vel * vel) + (d*d) + LIGHT_SPEED * LIGHT_SPEED;
 		if (disc < 0) {
 			return LightInfo();
 		}
 		disc = sqrtf(disc);
-		float t1 = (vel * d * 2.0 + disc) / 2.0 / (vel * vel - L_SP * L_SP);
-		float t2 = (vel * d * 2.0 - disc) / 2.0 / (vel * vel - L_SP * L_SP);
+		float t1 = (vel * d * 2.0 + disc) / 2.0 / (vel * vel - LIGHT_SPEED * LIGHT_SPEED);
+		float t2 = (vel * d * 2.0 - disc) / 2.0 / (vel * vel - LIGHT_SPEED * LIGHT_SPEED);
 		
 		float collTime;
 		if (t1 > 0) {
@@ -319,9 +322,9 @@ struct Intersection {
 struct Ray {
 	Vector p0, dir;
 	float shootTime;
-	Ray(Vector o = Vector(), Vector d = Vector(), float shoot_t = GLOBAL_TIME) : p0(o), dir(d.norm()), shootTime(shoot_t) {}
+	Ray(Vector o, Vector d, float shoot_t, float _c = LIGHT_SPEED) : p0(o), dir(d.norm()), shootTime(shoot_t) {}
 	Vector getVec(float t) const {
-		return p0 + dir *t * L_SP;
+		return p0 + dir *t * LIGHT_SPEED;
 	}
 };
 
@@ -362,26 +365,58 @@ struct TwoColoredPattern : public Pattern {
 
 };
 
+
+struct CCPattern: public Pattern {
+	Vector mid;
+	Color sec;
+	float param;
+	
+	CCPattern(Vector _m, Color _s, float _p): mid(_m), sec(_s), param(_p) {}
+	
+	virtual Color getPattern(const Vector& pos, const Color& col) const {
+		Vector diff = pos - mid;
+		
+		float r = diff.x * diff.x + diff.y * diff.y + diff.z * diff.z;
+		
+		return ((int) (r / param ) ) % 2 == 0 ? col : sec;
+		
+	}
+};
+
+struct MagPattern: public Pattern {
+	Vector mid;
+	Color sec;
+	float param;
+	Vector dir;
+	
+	MagPattern(Vector _m, Color _s, float _p,  const Vector& _d): mid(_m), sec(_s), param(_p), dir(_d) {}
+	
+	virtual Color getPattern(const Vector& pos, const Color& col) const {
+		Vector diff = pos - mid;
+		Vector diff1 = diff;
+		if (dir.x == 0) diff1.x = 1;
+		if (dir.y == 0) diff1.y = 1;
+		if (dir.z == 0) diff1.z = 1;
+		
+		diff = diff * param;
+		diff1 = diff1 * param;
+		
+		float k1 = sin(diff.x * diff.x + diff.y * diff.y + diff.z * diff.z);
+		float k2 = cos(diff1.x * diff1.y * diff1.z); 
+		
+		return k1 < k2 ? col : sec;
+		
+	}
+};
+
 struct Material {
 	Color kd ,ks;
 	Color n, F0; 
-	bool reflective,refractive;
+	bool rough,reflective,refractive;
 	float shin;
-	Material(Color _kd, Color _ks, Color _n, Color _k, bool refl, bool refr, float _s) :
-	 kd(_kd), ks(_ks), n(_n), reflective(refl), refractive(refr), shin(_s) {		
+	Material(Color _kd, Color _ks, float _s, Color _n, Color _k, bool _rough, bool refl, bool refr) :
+	 kd(_kd), ks(_ks), n(_n), rough(_rough), reflective(refl), refractive(refr), shin(_s) {		
 		this->F0 = (n - Color(1, 1, 1) * (n - Color(1, 1, 1)) + _k*_k) / ((n + Color(1, 1, 1))*(n + Color(1, 1, 1)) + _k*_k);
-	}
-	Material(Color c) {
-		*this = Material();
-		kd = c;
-	}
-	Material() {
-		kd = Color();
-		ks= Color();
-		n= Color();
-		F0 = Color();
-		reflective = refractive = false;
-		shin = 0;
 	}
 	
 	virtual Color get_kd(const Vector& pos) const {
@@ -422,11 +457,10 @@ struct Material {
 			cosalpha *= -1;
 			norm = normal * -1;
 			rn = 1.0/rn;
-		
 		}
 		
 		float disc = 1 - (1 - cosalpha * cosalpha) / rn /rn;
-		if (disc < 0) { return reflect(norm,viewIn); }
+		if (disc < 0) return reflect(norm,viewIn);
 		return (viewIn / rn + norm * (cosalpha / rn - sqrt(disc))).norm();
 		
 	}
@@ -440,13 +474,20 @@ struct Material {
 	
 };
 
-struct PatternedMaterial : public Material {
+struct RoughMaterial: public Material {
+	RoughMaterial(Color _kd, Color _ks = Color(), float _s = 0) : Material(_kd,_ks,_s,Color(),Color(),true,false,false) {}
+};
+
+struct SmoothMaterial: public Material {
+		SmoothMaterial (Color _n, Color _k, bool refr = false, bool refl = true): Material(Color(),Color(),0,_n,_k,false,refl,refr) {}
+};
+
+struct PatternedMaterial : public RoughMaterial {
 	const Pattern* pattern;
 	
-	PatternedMaterial(Color _kd, Color _ks, Color _n, Color _k, bool refl, bool refr, float _s, const Pattern* _pattern) :
-	Material(_kd,_ks,_n,_k,refl,refr,_s), pattern(_pattern) {}
-	PatternedMaterial(Color c, const Pattern* _pattern) : Material(c), pattern(_pattern) {}
-	PatternedMaterial(const Pattern* _pattern) : Material(), pattern(_pattern) {}
+	PatternedMaterial(Color _kd, Color _ks, float _s, const Pattern* _pattern) :
+	RoughMaterial(_kd,_ks,_s), pattern(_pattern) {}
+	PatternedMaterial(Color c, const Pattern* _pattern) : RoughMaterial(c), pattern(_pattern) {}
 	
 	virtual Color get_kd(const Vector& pos) const {
 		return pattern->getPattern(pos,kd);
@@ -459,14 +500,40 @@ Color stripes(const Vector & pos) {
 		return Color(magic,magic,magic);
 }
 
-ShadowPattern STRIPES_SHAD(&stripes);
+Color circles(const Vector& pos) {
+		float x = (((int) (1000 * fabs(pos.x))) % 1000) / 1000.0 - 0.5;
+		float y = (((int) (1000 * fabs(pos.y))) % 1000) / 1000.0 - 0.5;
+		float z = (((int) (1000 * fabs(pos.z))) % 1000) / 1000.0 - 0.5;
+		return (x*x + y*y+z*z < .4 ? Color(1,1,1) : Color(0,0,0));
+}
+
+Color chequered(const Vector& pos) {
+		int x = ((int) pos.x ) % 2;
+		int y = ((int) (pos.y + 5 )) % 2;
+		int z = ((int) (pos.z + 5)) % 2;
+		return ((x+y+z) % 2 == 0) ? Color(1,1,1) : Color(0,0,0);
+		
+}
+
+
+const SmoothMaterial GOLD(Color(0.17,0.35,1.5),Color(3.1,2.7,1.9), false);
+
+const SmoothMaterial GLASS(Color(1.5,1.5,1.5),Color(0,0,0),true);
+
 TwoColoredPattern STRIPES_TWO(&stripes, Color(.5,.1,.4));
+const PatternedMaterial WALL1(Color(.2,.5,.1), Color(0,0,0),0, &STRIPES_TWO);
 
-const Material GOLD(Color(), Color(), Color(0.17,0.35,1.5),Color(3.1,2.7,1.9),true,false,0);
-const Material GLASS(Color(), Color(), Color(1.5,1.5,1.5),Color(0,0,0),true,true,0);
-const PatternedMaterial SIMPLE(Color(.2,.5,.1), Color(0,0,0), Color(),Color(),false,false,0, &STRIPES_TWO);
-const PatternedMaterial SIMPLE2(Color(.7,.8,.5), &STRIPES_SHAD);
+ShadowPattern CIRCLES_SHAD(&circles);
+const PatternedMaterial WALL2(Color(.7,.8,.5), &CIRCLES_SHAD);
 
+MagPattern MG(Vector(5,0,-5), Color(.15, .3, .45),1, Vector(1,1,0));
+const PatternedMaterial WALL3(Color(.2,.4,.6), &MG);
+
+TwoColoredPattern CHEQUERED(&chequered, Color(0,1,1));
+const PatternedMaterial FLOOR(Color(.3,.5,.7), &CHEQUERED);
+
+CCPattern CIRC(Vector(10,5,5), Color(.7,.5,.3), 6);
+const PatternedMaterial CEIL(Color(.6,.4,.2),&CIRC);
 
 struct Object {
 	const Material *m;
@@ -486,8 +553,8 @@ struct Plane : public Object {
 	Intersection intersect(const Ray& ray) {
 		if (fabs(ray.dir * n) < EPSILON) return Intersection();
 		float intersection_param = ((p - ray.p0) * n)/(ray.dir * n);
-		if (intersection_param < 0) return Intersection();
-		return Intersection(ray.getVec(intersection_param),n,intersection_param,m);
+		if (intersection_param < -EPSILON) return Intersection();
+		return Intersection(ray.getVec(intersection_param),n,intersection_param / LIGHT_SPEED,m);
 	}
 };
 
@@ -503,14 +570,13 @@ struct QuadricShape : public Object {
 			
 			n = n.norm();
 			
-			
 			return n;
 			
 		}
 		
 		Intersection intersect(const Ray& ray) {
 			Vector r0 = ray.p0 - (vel * ray.shootTime);
-			Vector rd = (ray.dir * L_SP) + vel;
+			Vector rd = (ray.dir * LIGHT_SPEED) + vel;
 			
 			float x0 = r0.x;
 			float y0 = r0.y;
@@ -534,7 +600,7 @@ struct QuadricShape : public Object {
 			if (fabs(Av) < EPSILON) {
 				if (fabs(Bv) < EPSILON) return Intersection();
 				param = -Cv / Bv;
-				if (param < 0) {
+				if (param < -EPSILON) {
 					return Intersection();
 				}
 			} else {
@@ -649,7 +715,7 @@ struct Room {
 		closest.t = T_MAX;
 		for (int i = 0; i< objectNumber; i++) {
 			Intersection inter = objects[i]->intersect(r);
-			if (inter.real && inter.t < closest.t)
+			if (inter.real && (inter.t) < closest.t)
 				closest = inter;
 		}
 		return closest;
@@ -662,48 +728,29 @@ struct Room {
 		if (! hit.real || hit.material == NULL || hit.t <= 0) return Color();
 		Color outRadiance = AMBIENT_LIGHT * hit.material -> get_kd(hit.pos);
 		float time_elapsed = ray.shootTime - hit.t;
+		Vector nNorm = (ray.dir * hit.n > 0) ? hit.n * -1 : hit.n;
 		
-		for (int i = 0; i< lightNumber; i++) {
-			Vector norm = hit.n;
-			Vector vIn = (ray.dir);
-			
-			if ((vIn * norm) > 0) norm = norm * -1;
-		
-			LightInfo li = lights[i]->getInfo(hit.pos, time_elapsed);
-			if (li.valid) {
-				Intersection shadowIntersection = getFirstInter(Ray(hit.pos + norm*STEP_EPSILON, li.dir, time_elapsed));
-				if (shadowIntersection.t <= 0 || shadowIntersection.t > li.time) {
-					outRadiance = outRadiance + hit.material->shade(norm,vIn * -1, hit.pos,li);
+		if (hit.material -> rough) { 
+			for (int i = 0; i< lightNumber; i++) {
+				LightInfo li = lights[i]->getInfo(hit.pos, time_elapsed);
+				if (li.valid) {
+					Intersection shadowIntersection = getFirstInter(Ray(hit.pos + nNorm*STEP_EPSILON, li.dir, time_elapsed));
+					if (shadowIntersection.t <= 0 || shadowIntersection.t > li.time) {
+						outRadiance = outRadiance + hit.material->shade(nNorm,ray.dir * -1, hit.pos,li);
+					}
 				}
 			}
 		}
 		
+		Color fres = hit.material -> fresnel(nNorm,ray.dir);
 
 		if (hit.material->reflective) {
-			
-			Vector norm = hit.n;
-			Vector vIn = (ray.dir);
-			
-			if ((vIn * norm) > 0) norm = norm * -1;
-			
-			Color fres = hit.material -> fresnel(norm,vIn);
-			Vector vOut = hit.material -> reflect(norm,vIn);
-			
-			Ray reflectedRay = Ray (hit.pos + norm*STEP_EPSILON, vOut,time_elapsed);
-			
-			Color l_in = traceRay(reflectedRay, depth +1);
-			outRadiance = outRadiance + (l_in * fres) ; 
+			Ray reflectedRay = Ray (hit.pos + nNorm*STEP_EPSILON, hit.material -> reflect(nNorm,ray.dir),time_elapsed);
+			outRadiance = outRadiance + (traceRay(reflectedRay, depth +1) * fres) ; 
 		}
 		if (hit.material->refractive) {
-			
-			Vector norm = hit.n;
-			Vector vIn = (ray.dir);
-			Vector nNorm = (vIn * norm > 0) ? norm * -1 : norm;
-			
-			Color fres = hit.material -> fresnel(nNorm ,vIn);
-			
-			Ray refractedRay = Ray (hit.pos - nNorm*STEP_EPSILON, hit.material -> refract(norm,vIn), time_elapsed);
-			outRadiance = outRadiance + traceRay(refractedRay, depth +1) * (Color(1,1,1) - fres); 
+			Ray refractedRay = Ray (hit.pos - nNorm*STEP_EPSILON, hit.material -> refract(hit.n,ray.dir), time_elapsed);
+			outRadiance = outRadiance + (traceRay(refractedRay, depth +1) * (Color(1,1,1) - fres)); 
 		}
 		return outRadiance;
 	}
@@ -750,7 +797,7 @@ struct Camera {
 	Ray getRay(int x, int y) {
 		Vector hitScreen = Screen::getPixelPos(x,y);
 		hitScreen = dir + right * hitScreen.x + up * hitScreen.y;
-		return Ray(pos,hitScreen);
+		return Ray(pos,hitScreen, GLOBAL_TIME);
 	}
 	
 };
@@ -761,17 +808,20 @@ struct World {
 	Room room;
 	
 	World() {
+		cam = Camera(Vector(.1,-4.5,0), Vector(0.6,.3,0.4), Vector(0,1,0));
+		GLOBAL_TIME = 4.52;
 	
-		room.addObject( new Plane(&SIMPLE2,Vector(10,0,0),Vector(-1,0,0)));
-		room.addObject( new Plane(new Material(Color(.2,.4,.6)),Vector(10,0,-5),Vector(0,0,1)));
-		room.addObject( new Plane(new Material(Color(.6,.4,.2)),Vector(10,5,0),Vector(0,-1,0)));
-		room.addObject( new Plane(new Material(Color(.3,.3,.9)),Vector(10,-5,0),Vector(0,1,0)));
-		room.addObject( new Plane(&SIMPLE,Vector(0,0,0),Vector(1,0,0)));
+		room.addObject( new Plane(&WALL2,Vector(10,0,0),Vector(-1,0,0)));
+		room.addObject( new Plane(&WALL3,Vector(10,0,-5),Vector(0,0,1)));
+		room.addObject( new Plane(&CEIL,Vector(10,5,0),Vector(0,-1,0)));
+		room.addObject( new Plane(&FLOOR,Vector(10,-5,0),Vector(0,1,0)));
+		room.addObject( new Plane(&WALL1,Vector(0,0,0),Vector(1,0,0)));
 		
-		room.addObject(new Ellipsoid(&GLASS, Vector(10,-5,-5), Vector(.25,.25,1), Vector(1,0,.2), Vector(-0.4,.4,.4)));
+		room.addObject(new Ellipsoid(&GLASS, Vector(1.5,-3.5,3), Vector(.25,.25,1), Vector(1,0,.2), Vector(0.2236,0.2,-0.4)));
+		//room.addObject(new Ellipsoid(&GLASS, Vector(0,-5,5), Vector(.25,.25,1), Vector(1,0,.2), Vector(0.2236,0.2,-0.4)));
 		room.addObject(new Paraboloid(&GOLD, Vector(5,0,7.5), Vector(5,0,-2.5) ,Vector(0,0,1)));
 		
-		room.addLight( new PointLight(Vector(2,3,-2), Vector(.1,-0.1,0), Color(1,1,1), 20));	
+		room.addLight( new PointLight(Vector(6.5,3,1.5), Vector(.4,-0.1,.4), Color(1,1,1), 60));	
 		
 	}
 	
@@ -781,16 +831,13 @@ struct World {
 		glViewport(0, 0, screen.WIDTH, screen.HEIGHT);
 		for(int Y = 0; Y < screen.HEIGHT; Y++)
 			for(int X = 0; X < screen.WIDTH; X++) {
-				screen.image[Y*screen.WIDTH + X] = room.traceRay(cam.getRay(X,Y));
+				screen.image[Y*screen.WIDTH + X] = room.traceRay(cam.getRay(X,Y)).saturate();
 		}
 	}
 };
 
 World world;
 
-Vector camPos = Vector(.5,-4.5,-4.5);
-Vector camFwd = Vector(1,1,1);
-Vector camUp = Vector(0,1,0);
 
 // Inicializacio, a program futasanak kezdeten, az OpenGL kontextus letrehozasa utan hivodik meg (ld. main() fv.)
 void onInitialization( ) { 
@@ -818,52 +865,6 @@ void onKeyboard(unsigned char key, int x, int y) {
 		GLOBAL_TIME = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
 		glutPostRedisplay( );
 	}
-	float UNIT = .5;
-	if (key == 'a') {
-		camPos = camPos - world.cam.right * UNIT;
-		glutPostRedisplay( );
-	}
-	if (key == 'd') {
-		camPos = camPos + world.cam.right * UNIT;
-		glutPostRedisplay( );
-	}
-	if (key == 'w') {
-		camPos = camPos + world.cam.dir * UNIT;
-		glutPostRedisplay( );
-	}
-	if (key == 's') {
-		camPos = camPos - world.cam.dir * UNIT;
-		glutPostRedisplay( );
-	}
-	if (key == 'r') {
-		camPos = camPos + world.cam.up * UNIT;
-		camPos.x += UNIT;
-		glutPostRedisplay( );
-	}
-	if (key == 'f') {
-		camPos = camPos - world.cam.up * UNIT;
-		glutPostRedisplay( );
-	}
-	if (key == '6') {
-		camFwd = (camFwd % camUp + camFwd * 3) / 4; 
-		glutPostRedisplay( );
-	}
-	if (key == '4') {
-		camFwd = (camUp % camFwd + camFwd * 3) / 4; 
-		glutPostRedisplay( );
-	}
-	if (key == '8') {
-		camFwd = (world.cam.right % world.cam.dir + world.cam.dir*3) / 4; 
-		camUp = world.cam.right % world.cam.dir;
-		glutPostRedisplay( );
-	}
-	if (key == '2') {
-		camFwd = (world.cam.dir % world.cam.right + world.cam.dir*3) / 4; 
-		camUp = world.cam.right % world.cam.dir;
-		glutPostRedisplay( );
-	}
-
-
 }
 
 // Billentyuzet esemenyeket lekezelo fuggveny (felengedes)
@@ -884,7 +885,7 @@ void onMouseMotion(int x, int y)
 
 // `Idle' esemenykezelo, jelzi, hogy az ido telik, az Idle esemenyek frekvenciajara csak a 0 a garantalt minimalis ertek
 void onIdle( ) {
-
+     		// program inditasa ota eltelt ido
 
 }
 

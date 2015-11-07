@@ -65,7 +65,7 @@
 const float EPSILON = 0.001f;
 const float STEP_EPSILON = 0.005f;
 const float LIGHT_SPEED = 1.0f;
-const int MAX_DEPTH = 10;
+const int MAX_DEPTH = 15;
 const float T_MAX = 100.0f;
 float GLOBAL_TIME = 0.0f;
 
