@@ -869,7 +869,7 @@ void onKeyboard(unsigned char key, int x, int y) {
     if (key == ' ') {
 		if (!space_pressed) {
 			space_pressed = true;
-			GLOBAL_TIME = 5;//glutGet(GLUT_ELAPSED_TIME) / 1000.0;
+			GLOBAL_TIME = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
 			glutPostRedisplay( );
 		}
 	}
