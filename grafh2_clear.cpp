@@ -27,7 +27,7 @@
 //
 // NYILATKOZAT
 // ---------------------------------------------------------------------------------------------
-// Nev    : Czipó Bence
+// Nev    : Czipo Bence
 // Neptun : B462JZ
 // ---------------------------------------------------------------------------------------------
 // ezennel kijelentem, hogy a feladatot magam keszitettem, es ha barmilyen segitseget igenybe vettem vagy 
@@ -665,7 +665,7 @@ struct Ellipsoid : public QuadricShape {
 	
 	Ellipsoid(const Material *m, const Vector& pos, const Vector& sc,const Vector& rot, const Vector& _v = Vector()): QuadricShape(m,_v) {
 		Matrix_4_4 matr = Matrix_4_4::eye();
-		matr.matr[3][3] = 0;
+		matr.matr[3][3] = -1;
 	
 		Matrix_4_4 trans = Matrix_4_4::scale(sc);
 			
@@ -679,9 +679,6 @@ struct Ellipsoid : public QuadricShape {
 		trans = Matrix_4_4::translate(pos);
 	
 		matr = (trans.T() * matr) * trans;
-		
-
-		matr.matr[3][3] -= 1;
 		
 		setParams(matr);
 		
