@@ -63,9 +63,9 @@
 // Innentol modosithatod...
 
 const float EPSILON = 0.001f;
-const float STEP_EPSILON = 0.001f;
+const float STEP_EPSILON = 0.002f;
 const float LIGHT_SPEED = 1.0f;
-const int MAX_DEPTH = 7;
+const int MAX_DEPTH = 5;
 const float T_MAX = 100.0f;
 float GLOBAL_TIME = 0.0f;
 
@@ -600,7 +600,7 @@ struct QuadricShape : public Object {
 			if (fabs(Av) < EPSILON) {
 				if (fabs(Bv) < EPSILON) return Intersection();
 				param = -Cv / Bv;
-				if (param < -EPSILON) {
+				if (param < 0) {
 					return Intersection();
 				}
 			} else {
