@@ -65,7 +65,7 @@
 const float EPSILON = 0.001f;
 const float STEP_EPSILON = 0.001f;
 const float LIGHT_SPEED = 1.0f;
-const int MAX_DEPTH = 5;
+const int MAX_DEPTH = 7;
 const float T_MAX = 100.0f;
 float GLOBAL_TIME = 0.0f;
 
@@ -805,7 +805,7 @@ struct World {
 	Room room;
 	
 	World() {
-		cam = Camera(Vector(.1,-4.5,0), Vector(0.6,.3,0.4), Vector(0,1,0));
+		cam = Camera(Vector(.1,-4.5,-1), Vector(0.6,.3,0.7), Vector(0,1,0));
 	}
 	
 	void init() {
@@ -820,7 +820,7 @@ struct World {
 		room.addObject( new Plane(&FLOOR,Vector(10,-5,0),Vector(0,1,0)));
 		room.addObject( new Plane(&WALL1,Vector(0,0,0),Vector(1,0,0)));
 		
-		room.addObject(new Ellipsoid(&GLASS, Vector(1.5,-3.5,3), Vector(.25,.25,1), Vector(1,0,.2), Vector(0.2236,0.2,-0.4)));
+		room.addObject(new Ellipsoid(&GLASS, Vector(1.5,-3.5,2.4), Vector(.25,.25,1), Vector(1,0,.2), Vector(0.2236,0.2,-0.4)));
 		room.addObject(new Paraboloid(&GOLD, Vector(5,0,7.5), Vector(5,0,-2.5) ,Vector(0,0,1)));
 		
 		room.addLight( new PointLight(Vector(6.5,3,1.5), Vector(.4,-0.1,.4), Color(1,1,1), 60));	
