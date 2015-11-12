@@ -771,7 +771,9 @@ struct Screen {
 	}
 	
 	void createFile() {
-		FILE *fp = fopen("test.ppm", "wb");
+		char filename[50];
+		sprintf(filename, "images/%05d.ppm", (int)(GLOBAL_TIME*1000));
+		FILE *fp = fopen(filename, "wb");
 		fprintf(fp, "P6\n%d %d\n255\n", WIDTH,HEIGHT);
 		
 		for(int Y = HEIGHT-1; Y >= 0;Y--) {
