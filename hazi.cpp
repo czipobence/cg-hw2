@@ -769,6 +769,8 @@ struct Screen {
 		glDrawPixels(WIDTH, HEIGHT, GL_RGB, GL_FLOAT, image);
 	}
 	
+	void createBMP() {}
+	
 	Vector static getPixelPos(float x, float y) {
 		float posX = (x + 0.5) / ((float) Screen::WIDTH/2.0) - 1.0;
 		float posY = (y + 0.5) / ((float) Screen::HEIGHT/2.0) - 1.0; 
@@ -827,7 +829,10 @@ struct World {
 		
 	}
 	
-	void draw() {screen.draw();}
+	void draw() {
+		screen.createBMP();
+		screen.draw();
+	}
 	
 	void render() {
 		glViewport(0, 0, screen.WIDTH, screen.HEIGHT);
