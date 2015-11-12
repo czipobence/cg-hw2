@@ -44,6 +44,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #if defined(__APPLE__)                                                                                                                                                                                                            
 #include <OpenGL/gl.h>                                                                                                                                                                                                            
@@ -769,7 +770,25 @@ struct Screen {
 		glDrawPixels(WIDTH, HEIGHT, GL_RGB, GL_FLOAT, image);
 	}
 	
-	void createBMP() {}
+	void createFile() {
+		FILE *fp = fopen("test.ppm", "wb");
+		fprintf(fp, "P6\n%d %d\n255\n", WIDTH,HEIGHT);
+		
+		for(int Y = HEIGHT-1; Y >= 0;Y--) {
+			for(int X = 0; X < WIDTH; X++) {
+				Color c = image[Y*WIDTH + X];
+				static unsigned char color[3];
+				color[0] = (int)(c.r * 255) % 256;  /* red */
+				color[1] = (int)(c.g * 255) % 256;  /* green */
+				color[2] = (int)(c.b * 255) % 256;  /* blue */
+				fwrite(color, 1, 3, fp);
+			//	myFile << 0xFF << 0xFF << 0xFF;//screen.image[Y*screen.WIDTH + X];
+				
+			}
+		}
+		
+		fclose(fp);
+	}
 	
 	Vector static getPixelPos(float x, float y) {
 		float posX = (x + 0.5) / ((float) Screen::WIDTH/2.0) - 1.0;
@@ -830,7 +849,7 @@ struct World {
 	}
 	
 	void draw() {
-		screen.createBMP();
+		screen.createFile();
 		screen.draw();
 	}
 	
