@@ -6,4 +6,5 @@ grafh
 grafh2_clear
 *~
 *.o
+images/*
 
