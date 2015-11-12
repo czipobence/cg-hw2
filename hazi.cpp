@@ -784,7 +784,6 @@ struct Screen {
 				color[1] = (int)(c.g * 255) % 256;  /* green */
 				color[2] = (int)(c.b * 255) % 256;  /* blue */
 				fwrite(color, 1, 3, fp);
-			//	myFile << 0xFF << 0xFF << 0xFF;//screen.image[Y*screen.WIDTH + X];
 				
 			}
 		}
