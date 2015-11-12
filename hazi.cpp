@@ -27,7 +27,7 @@
 //
 // NYILATKOZAT
 // ---------------------------------------------------------------------------------------------
-// Nev    : Czipó Bence
+// Nev    : Czipo Bence
 // Neptun : B462JZ
 // ---------------------------------------------------------------------------------------------
 // ezennel kijelentem, hogy a feladatot magam keszitettem, es ha barmilyen segitseget igenybe vettem vagy 
@@ -44,7 +44,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <stdlib.h>
-#include <iostream>
+
 #if defined(__APPLE__)                                                                                                                                                                                                            
 #include <OpenGL/gl.h>                                                                                                                                                                                                            
 #include <OpenGL/glu.h>                                                                                                                                                                                                           
@@ -63,9 +63,9 @@
 // Innentol modosithatod...
 
 const float EPSILON = 0.001f;
-const float STEP_EPSILON = 0.005f;
+const float STEP_EPSILON = 0.002f;
 const float LIGHT_SPEED = 1.0f;
-const int MAX_DEPTH = 15;
+const int MAX_DEPTH = 5;
 const float T_MAX = 100.0f;
 float GLOBAL_TIME = 0.0f;
 
@@ -600,7 +600,7 @@ struct QuadricShape : public Object {
 			if (fabs(Av) < EPSILON) {
 				if (fabs(Bv) < EPSILON) return Intersection();
 				param = -Cv / Bv;
-				if (param < -EPSILON) {
+				if (param < 0) {
 					return Intersection();
 				}
 			} else {
@@ -665,7 +665,7 @@ struct Ellipsoid : public QuadricShape {
 	
 	Ellipsoid(const Material *m, const Vector& pos, const Vector& sc,const Vector& rot, const Vector& _v = Vector()): QuadricShape(m,_v) {
 		Matrix_4_4 matr = Matrix_4_4::eye();
-		matr.matr[3][3] = 0;
+		matr.matr[3][3] = -1;
 	
 		Matrix_4_4 trans = Matrix_4_4::scale(sc);
 			
@@ -679,9 +679,6 @@ struct Ellipsoid : public QuadricShape {
 		trans = Matrix_4_4::translate(pos);
 	
 		matr = (trans.T() * matr) * trans;
-		
-
-		matr.matr[3][3] -= 1;
 		
 		setParams(matr);
 		
@@ -808,17 +805,22 @@ struct World {
 	Room room;
 	
 	World() {
-		cam = Camera(Vector(.1,-4.5,0), Vector(0.6,.3,0.4), Vector(0,1,0));
-		GLOBAL_TIME = 4.52;
+		cam = Camera(Vector(.1,-4.5,-1), Vector(0.6,.3,0.7), Vector(0,1,0));
+	}
 	
+	void init() {
+		
+		for(int Y = 0; Y < screen.HEIGHT; Y++)
+			for(int X = 0; X < screen.WIDTH; X++)
+				screen.image[Y*screen.WIDTH + X] = AMBIENT_LIGHT;
+		
 		room.addObject( new Plane(&WALL2,Vector(10,0,0),Vector(-1,0,0)));
 		room.addObject( new Plane(&WALL3,Vector(10,0,-5),Vector(0,0,1)));
 		room.addObject( new Plane(&CEIL,Vector(10,5,0),Vector(0,-1,0)));
 		room.addObject( new Plane(&FLOOR,Vector(10,-5,0),Vector(0,1,0)));
 		room.addObject( new Plane(&WALL1,Vector(0,0,0),Vector(1,0,0)));
 		
-		room.addObject(new Ellipsoid(&GLASS, Vector(1.5,-3.5,3), Vector(.25,.25,1), Vector(1,0,.2), Vector(0.2236,0.2,-0.4)));
-		//room.addObject(new Ellipsoid(&GLASS, Vector(0,-5,5), Vector(.25,.25,1), Vector(1,0,.2), Vector(0.2236,0.2,-0.4)));
+		room.addObject(new Ellipsoid(&GLASS, Vector(1.5,-3.5,2.4), Vector(.25,.25,1), Vector(1,0,.2), Vector(0.2236,0.2,-0.4)));
 		room.addObject(new Paraboloid(&GOLD, Vector(5,0,7.5), Vector(5,0,-2.5) ,Vector(0,0,1)));
 		
 		room.addLight( new PointLight(Vector(6.5,3,1.5), Vector(.4,-0.1,.4), Color(1,1,1), 60));	
@@ -837,16 +839,12 @@ struct World {
 };
 
 World world;
+bool space_pressed = false;
 
-Vector camPos = Vector(.1,-4.5,1);
-Vector camFwd = Vector(0.6,.3,0.3);
-Vector camUp = Vector(0,1,0);
 
 // Inicializacio, a program futasanak kezdeten, az OpenGL kontextus letrehozasa utan hivodik meg (ld. main() fv.)
 void onInitialization( ) { 
-	
-	
-
+	world.init();
 }
 
 // Rajzolas, ha az alkalmazas ablak ervenytelenne valik, akkor ez a fuggveny hivodik meg
@@ -854,8 +852,9 @@ void onDisplay( ) {
     glClearColor(0.1f, 0.2f, 0.3f, 1.0f);		// torlesi szin beallitasa
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // kepernyo torles
 
-	world.cam = Camera(camPos,camFwd,camUp);
-	world.render();
+	if (space_pressed) {
+		world.render();
+	}
 	world.draw();
 
     glutSwapBuffers();     				// Buffercsere: rajzolas vege
@@ -865,56 +864,12 @@ void onDisplay( ) {
 // Billentyuzet esemenyeket lekezelo fuggveny (lenyomas)
 void onKeyboard(unsigned char key, int x, int y) {
     if (key == ' ') {
-		GLOBAL_TIME = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
-		//CALCULATE_IMAGE
-		//calculateImage(time)
-		glutPostRedisplay( );
+		if (!space_pressed) {
+			space_pressed = true;
+			GLOBAL_TIME = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
+			glutPostRedisplay( );
+		}
 	}
-	float UNIT = .5;
-	if (key == 'a') {
-		camPos = camPos - world.cam.right * UNIT;
-		glutPostRedisplay( );
-	}
-	if (key == 'd') {
-		camPos = camPos + world.cam.right * UNIT;
-		glutPostRedisplay( );
-	}
-	if (key == 'w') {
-		camPos = camPos + world.cam.dir * UNIT;
-		glutPostRedisplay( );
-	}
-	if (key == 's') {
-		camPos = camPos - world.cam.dir * UNIT;
-		glutPostRedisplay( );
-	}
-	if (key == 'r') {
-		camPos = camPos + world.cam.up * UNIT;
-		glutPostRedisplay( );
-	}
-	if (key == 'f') {
-		camPos = camPos - world.cam.up * UNIT;
-		glutPostRedisplay( );
-	}
-	if (key == '6') {
-		camFwd = (camFwd % camUp + camFwd * 3) / 4; 
-		glutPostRedisplay( );
-	}
-	if (key == '4') {
-		camFwd = (camUp % camFwd + camFwd * 3) / 4; 
-		glutPostRedisplay( );
-	}
-	if (key == '8') {
-		camFwd = (world.cam.right % world.cam.dir + world.cam.dir*3) / 4; 
-		camUp = world.cam.right % world.cam.dir;
-		glutPostRedisplay( );
-	}
-	if (key == '2') {
-		camFwd = (world.cam.dir % world.cam.right + world.cam.dir*3) / 4; 
-		camUp = world.cam.right % world.cam.dir;
-		glutPostRedisplay( );
-	}
-
-
 }
 
 // Billentyuzet esemenyeket lekezelo fuggveny (felengedes)
@@ -938,6 +893,7 @@ void onIdle( ) {
      		// program inditasa ota eltelt ido
 
 }
+
 
 // ...Idaig modosithatod
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
