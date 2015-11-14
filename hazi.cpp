@@ -850,7 +850,6 @@ struct World {
 	}
 	
 	void draw() {
-		screen.createFile();
 		screen.draw();
 	}
 	
@@ -860,13 +859,14 @@ struct World {
 			for(int X = 0; X < screen.WIDTH; X++) {
 				screen.image[Y*screen.WIDTH + X] = room.traceRay(cam.getRay(X,Y)).saturate();
 		}
+		screen.createFile();
 	}
 };
 
 World world;
 bool space_pressed = false;
 
-
+/*
 // Inicializacio, a program futasanak kezdeten, az OpenGL kontextus letrehozasa utan hivodik meg (ld. main() fv.)
 void onInitialization( ) { 
 	world.init();
@@ -883,7 +883,6 @@ void onDisplay( ) {
 	world.draw();
 
     glutSwapBuffers();     				// Buffercsere: rajzolas vege
-
 }
 
 // Billentyuzet esemenyeket lekezelo fuggveny (lenyomas)
@@ -892,7 +891,7 @@ void onKeyboard(unsigned char key, int x, int y) {
 		if (!space_pressed) {
 			space_pressed = true;
 			GLOBAL_TIME = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
-			glutPostRedisplay( );
+			world.render();
 		}
 	}
 }
@@ -918,14 +917,14 @@ void onIdle( ) {
      		// program inditasa ota eltelt ido
 
 }
-
+*/
 
 // ...Idaig modosithatod
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 // A C++ program belepesi pontja, a main fuggvenyt mar nem szabad bantani
 int main(int argc, char **argv) {
-    glutInit(&argc, argv); 				// GLUT inicializalasa
+    /*glutInit(&argc, argv); 				// GLUT inicializalasa
     glutInitWindowSize(600, 600);			// Alkalmazas ablak kezdeti merete 600x600 pixel 
     glutInitWindowPosition(100, 100);			// Az elozo alkalmazas ablakhoz kepest hol tunik fel
     glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);	// 8 bites R,G,B,A + dupla buffer + melyseg buffer
@@ -947,6 +946,14 @@ int main(int argc, char **argv) {
     glutMotionFunc(onMouseMotion);
 
     glutMainLoop();					// Esemenykezelo hurok
+    */
+    world.init();
+    
+    for (int i = 0; i< 401; i++) {
+		GLOBAL_TIME = i / 40.0;
+		world.render();
+	}
+    
     
     return 0;
 }
